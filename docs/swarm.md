@@ -126,6 +126,64 @@ List all services in a specific stack in the swarm
 $ sugar swarm ls --stack my_stack
 ```
 
+### Inspect Services
+
+Get detailed information about a service:
+
+```bash
+$ sugar  swarm inspect --service service1-1 --stack my_stack
+```
+
+### View Service Logs
+
+View logs for a specific service:
+
+```bash
+$ sugar swarm logs --services service1-1 --stack my_stack
+```
+
+With additional options:
+
+```bash
+$ sugar swarm logs --services myservice --stack my_stack --follow --tail 100
+```
+
+### Scale Services
+
+Scale services within a stack:
+
+```bash
+$ sugar swarm scale --stack my_stack --replicas service1=3,service2=5
+```
+
+### Update Services (Currently in experemental stage)
+
+Update service configuration:
+
+```bash
+$ sugar swarm update --services myservice --image nginx:latest
+```
+
+Update with environment variables:
+
+```bash
+$ sugar swarm update --services myservice --env_add "DEBUG=1,LOG_LEVEL=info"
+```
+
+### Rollback Services
+
+Rollback a set of services to its previous configuration:
+
+```bash
+$  sugar swarm rollback --services service1-1,service1-3 --stack my_stack
+```
+
+Rollback all services in a stack:
+
+```bash
+$ sugar swarm rollback --stack my_stack --all
+```
+
 ## Node Management
 
 Sugar provides a complete set of commands to manage swarm nodes through the

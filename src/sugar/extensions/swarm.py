@@ -12,6 +12,7 @@ import sh
 from sugar.docs import docparams
 from sugar.extensions.base import SugarBase
 from sugar.logs import SugarError, SugarLogs
+from sugar.utils import prepend_stack_name
 
 doc_profile = {
     'profile': 'Specify the profile name of the services you want to use.'
@@ -96,6 +97,48 @@ doc_node_options = {
     ),
     'rm': 'Remove one or more nodes from the swarm',
     'update': 'Update a node',
+}
+
+doc_logs_options = {
+    'details': 'Show extra details provided to logs',
+    'stack': 'Name of the stack to inspect',
+    'follow': 'Follow log output',
+    'no_resolve': 'Do not map IDs to Names in output',
+    'no_task_ids': 'Do not include task IDs in output',
+    'no_trunc': 'Do not truncate output',
+    'raw': 'Do not neatly format logs',
+    'since': """Show logs since timestamp
+    (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)""",
+    'tail': 'Number of lines to show from the end of the logs (default all)',
+    'timestamps': 'Show timestamps',
+}
+
+doc_rollback_options = {
+    'detach': """Exit immediately instead
+    of waiting for the service to converge""",
+    'quiet': 'Suppress progress output',
+}
+
+doc_scale_options = {
+    'detach': """Exit immediately instead
+    of waiting for the service to converge""",
+    'stack': 'Name of the stack to scale',
+    'replicas': """Number of replicas per service
+    (comma-separated list of service=replicas pairs)""",
+}
+
+doc_update_options = {
+    'detach': """Exit immediately instead of waiting
+    for the service to converge""",
+    'quiet': 'Suppress progress output',
+    'image': 'Service image tag',
+    'replicas': 'Number of tasks',
+    'force': 'Force update even if no changes require it',
+    'rollback': 'Rollback to previous specification',
+    'env_add': """Add or update environment variables
+    (comma-separated list of NAME=VALUE)""",
+    'label_add': """Add or update service labels
+      (comma-separated list of key=value)""",
 }
 
 
@@ -358,6 +401,128 @@ class SugarSwarm(SugarBase):
             **doc_options,
         }
     )
+    def _cmd_inspect(
+        self,
+        service: str = '',
+        stack: str = '',
+        format: str = '',
+        size: bool = False,
+        type: str = '',
+        options: str = '',
+    ) -> None:
+        """
+        Display detailed information on a Docker service.
+
+        Returns low-level information on a single Docker service.
+        For inspecting multiple objects, use docker inspect directly.
+        """
+        # Validate only one service is provided (no commas)
+        if ',' in service:
+            SugarLogs.raise_error(
+                'Only one service can be inspected at a time. '
+                'Multiple services are not supported.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        # Raise error if only stack is provided without service, or only
+        # service without stack
+        if not (service and stack):
+            SugarLogs.raise_error(
+                """Both service name and stack name must be
+              provided together for inspect""",
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+
+        # Create a single-item list with the service name
+        service_name = service.strip() if service else ''
+
+        if service_name:
+            services_names = [service_name]
+            if stack:
+                # Prepend stack name if specified
+                services_names = [f'{stack}_{service_name}']
+        else:
+            services_names = []
+
+        # Prepare the options with the format flag if provided
+        options_list = self._get_list_args(options)
+
+        # Process formatting options
+        if format:
+            options_list.extend(['--format', format])
+
+        if size:
+            options_list.append('--size')
+
+        if type:
+            options_list.extend(['--type', type])
+
+        # Use direct docker inspect command instead
+        # of service-specific inspect
+        self.backend_args = []  # Reset backend args use direct docker command
+        self._call_backend_app(
+            'inspect',
+            services=services_names,
+            options_args=options_list,
+        )
+
+    @docparams({**doc_common_services, **doc_logs_options})
+    def _cmd_logs(
+        self,
+        services: str = '',
+        all: bool = False,
+        stack: str = '',
+        details: bool = False,
+        follow: bool = False,
+        no_resolve: bool = False,
+        no_task_ids: bool = False,
+        no_trunc: bool = False,
+        raw: bool = False,
+        since: str = '',
+        tail: str = '',
+        timestamps: bool = False,
+        options: str = '',
+    ) -> None:
+        """
+        Fetch logs of a service or task.
+
+        Display the logs of the specified service or task with
+        advanced filtering and formatting options.
+        """
+        services_names = prepend_stack_name(
+            stack_name=stack,
+            services=self._get_services_names(services=services, all=all),
+        )
+        options_args = self._get_list_args(options)
+
+        # TODO: Validate since and tail values
+        # Add flag options
+        if details:
+            options_args.append('--details')
+        if follow:
+            options_args.append('--follow')
+        if no_resolve:
+            options_args.append('--no-resolve')
+        if no_task_ids:
+            options_args.append('--no-task-ids')
+        if no_trunc:
+            options_args.append('--no-trunc')
+        if raw:
+            options_args.append('--raw')
+        if timestamps:
+            options_args.append('--timestamps')
+
+        # Add options with values
+        if since:
+            options_args.extend(['--since', since])
+        if tail:
+            options_args.extend(['--tail', tail])
+
+        self._call_service_command(
+            'logs',
+            services=services_names,
+            options_args=options_args,
+        )
+
     @docparams(
         {
             **doc_common_services,
@@ -368,6 +533,8 @@ class SugarSwarm(SugarBase):
         self,
         options: str = '',
         stack: str = '',
+        all: bool = False,
+        services: str = '',
     ) -> None:
         """List services.
 
@@ -466,6 +633,261 @@ class SugarSwarm(SugarBase):
             )
             return []
 
+    def _perform_service_rollback(
+        self, service: str, options_args: list[str]
+    ) -> bool:
+        """Perform rollback for a single service.
+
+        Returns True if rollback was successful, False otherwise.
+        """
+        try:
+            output = io.StringIO()
+            error = io.StringIO()
+
+            self.backend_app(
+                'service',
+                'rollback',
+                *options_args,
+                service,
+                _out=output,
+                _err=error,
+                _ok_code=[0, 1],  # Accept both success and error codes
+            )
+
+            error_output = error.getvalue()
+            if 'does not have a previous spec' in error_output:
+                SugarLogs.print_warning(
+                    f"""Service {service} has no
+                      previous version to roll back to"""
+                )
+                return False
+            elif error_output:
+                SugarLogs.print_warning(
+                    f"""Failed to rollback service {service}:
+                      {error_output.strip()}"""
+                )
+                return False
+            else:
+                print(f'Successfully rolled back service {service}')
+                return True
+
+        except Exception as e:
+            SugarLogs.print_warning(
+                f'Error rolling back service {service}: {e!s}'
+            )
+            return False
+
+    def _get_services_to_rollback(
+        self, services: str, all: bool, stack: str
+    ) -> list[str]:
+        """Determine which services to roll back based on parameters."""
+        if stack:
+            if all or not services:
+                # Get all services from the stack
+                return self._get_services_from_stack(stack)
+
+            # Process specified services with stack prefix
+            services_to_rollback = []
+            for service in services.split(','):
+                if service:
+                    prefixed_service = (
+                        service
+                        if service.startswith(f'{stack}_')
+                        else f'{stack}_{service}'
+                    )
+                    services_to_rollback.append(prefixed_service)
+            return services_to_rollback
+        else:
+            # No stack specified, use services directly
+            return self._get_services_names(services=services, all=all)
+
+    @docparams({**doc_common_services, **doc_rollback_options, **doc_stack})
+    def _cmd_rollback(
+        self,
+        services: str = '',
+        all: bool = False,
+        stack: str = '',
+        detach: bool = False,
+        quiet: bool = False,
+        options: str = '',
+    ) -> None:
+        """
+        Revert changes to a service's configuration.
+
+        This command rolls back a service to its previous version.
+
+        If a stack name is provided without services, all services in the stack
+        will be rolled back.
+        If both stack and services are provided, only the specified services in
+        the stack will be rolled back.
+        If both stack and --all are provided, all services in the stack will
+        be rolled back.
+        """
+        options_args = self._get_list_args(options)
+
+        # Add flag options
+        if detach:
+            options_args.append('--detach')
+        if quiet:
+            options_args.append('--quiet')
+
+        # Get services to rollback
+        services_to_rollback = self._get_services_to_rollback(
+            services, all, stack
+        )
+
+        # Perform rollbacks
+        success_count = 0
+        failure_count = 0
+
+        for service in services_to_rollback:
+            success = self._perform_service_rollback(service, options_args)
+            if success:
+                success_count += 1
+            else:
+                failure_count += 1
+
+        # Summary message
+        if services_to_rollback:
+            print(
+                f"""Rollback complete: {success_count}
+                  succeeded, {failure_count} failed"""
+            )
+        else:
+            SugarLogs.print_warning('No services specified for rollback')
+
+    @docparams({**doc_stack, **doc_scale_options})
+    def _cmd_scale(
+        self,
+        stack: str = '',
+        replicas: str = '',
+        detach: bool = False,
+        options: str = '',
+    ) -> None:
+        """
+        Scale one or multiple replicated services.
+
+        This command sets the desired number of
+        replicas for each specified service.
+
+        Format for replicas parameter: 'service1=3,service2=5'
+
+        Scale multiple services :
+
+        sugar swarm scale --stack my_stack --replicas service1=3,service2=5
+
+        """
+        if not stack:
+            SugarLogs.raise_error(
+                'Stack name must be provided for scaling services',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+
+        options_args = self._get_list_args(options)
+
+        # Add detach flag if specified
+        if detach:
+            options_args.append('--detach')
+
+        if not replicas:
+            SugarLogs.raise_error(
+                """Replicas must be specified in the format
+                service1=3,service2=5""",
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+
+        service_replicas_pairs = []
+        replicas_dict = {}
+
+        # Parse the replicas parameter (service=replicas,service=replicas)
+        for pair in replicas.split(','):
+            if '=' in pair:
+                service, count = pair.split('=', 1)
+                replicas_dict[service.strip()] = count.strip()
+
+        # Create the properly formatted SERVICE=REPLICAS arguments
+        for service, count in replicas_dict.items():
+            full_service_name = f'{stack}_{service}'
+            service_replicas_pairs.append(f'{full_service_name}={count}')
+
+        self._call_service_command(
+            'scale',
+            services=service_replicas_pairs,
+            options_args=options_args,
+        )
+
+    @docparams({**doc_common_services, **doc_update_options})
+    def _cmd_update(
+        self,
+        services: str = '',
+        all: bool = False,
+        detach: bool = False,
+        quiet: bool = False,
+        image: str = '',
+        replicas: str = '',
+        force: bool = False,
+        rollback: bool = False,
+        env_add: str = '',
+        label_add: str = '',
+        options: str = '',
+    ) -> None:
+        """
+        Update a service.
+
+        This command updates the configuration of one or more services.
+
+        Examples
+        --------
+            # Update service image
+            sugar swarm update --services my-web --image nginx:latest
+
+            # Scale a service (update replicas)
+            sugar swarm update --services api --replicas 3
+
+            # Add environment variables
+            sugar swarm update --services app --env_add
+            "DEBUG=1,LOG_LEVEL=info"
+
+            # Update with force flag and detach
+            sugar swarm update --services backend --force --detach
+        """
+        services_names = self._get_services_names(services=services, all=all)
+        options_args = self._get_list_args(options)
+
+        # Add flag options
+        if detach:
+            options_args.append('--detach')
+        if quiet:
+            options_args.append('--quiet')
+        if force:
+            options_args.append('--force')
+        if rollback:
+            options_args.append('--rollback')
+
+        # Add options with values
+        if image:
+            options_args.extend(['--image', image])
+        if replicas:
+            options_args.extend(['--replicas', replicas])
+
+        # Process comma-separated key-value pairs
+        if env_add:
+            for env_pair in env_add.split(','):
+                if env_pair.strip():
+                    options_args.extend(['--env-add', env_pair.strip()])
+
+        if label_add:
+            for label_pair in label_add.split(','):
+                if label_pair.strip():
+                    options_args.extend(['--label-add', label_pair.strip()])
+
+        self._call_service_command(
+            'update',
+            services=services_names,
+            options_args=options_args,
+        )
+
+    # Node commands
     @docparams(doc_node_options)
     def _cmd_node(
         self,

@@ -9,7 +9,7 @@ import pytest
 import sh
 
 from sugar.extensions.swarm import SugarSwarm
-from sugar.logs import SugarLogs
+from sugar.logs import SugarError, SugarLogs
 
 
 @pytest.fixture
@@ -233,6 +233,87 @@ class TestSugarSwarm:
                     backend_args=['stack', 'deploy', '-c'],
                 )
 
+    def test_cmd_inspect_multiple_services(
+        self, sugar_swarm: SugarSwarm
+    ) -> None:
+        """Test _cmd_inspect sets correct parameters."""
+        with mock.patch.object(sugar_swarm, '_get_list_args', return_value=[]):
+            with mock.patch(
+                'sugar.logs.SugarLogs.raise_error', side_effect=SystemExit
+            ) as mock_error:
+                with pytest.raises(SystemExit):
+                    sugar_swarm._cmd_inspect(service='svc1,svc2')
+                mock_error.assert_called_once()
+
+    def test_cmd_inspect_single_service(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_inspect sets correct parameters for a single service."""
+        with mock.patch.object(sugar_swarm, '_get_list_args', return_value=[]):
+            with mock.patch.object(
+                sugar_swarm, '_call_backend_app'
+            ) as mock_call:
+                sugar_swarm._cmd_inspect(service='svc1', stack='test-stack')
+                mock_call.assert_called_once_with(
+                    'inspect', services=['test-stack_svc1'], options_args=[]
+                )
+
+    def test_cmd_inspect_service_without_stack_message(
+        self, sugar_swarm: SugarSwarm
+    ) -> None:
+        """Test raises correct error, service is provided without stack."""
+        with mock.patch.object(sugar_swarm, '_get_list_args', return_value=[]):
+            with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
+                sugar_swarm._cmd_inspect(service='my-service', stack='')
+                mock_error.assert_called_once_with(
+                    """Both service name and stack name must be
+              provided together for inspect""",
+                    SugarError.SUGAR_INVALID_PARAMETER,
+                )
+
+    def test_cmd_inspect_service_without_service_message(
+        self, sugar_swarm: SugarSwarm
+    ) -> None:
+        """Test raises correct error, service is provided without stack."""
+        with mock.patch.object(sugar_swarm, '_get_list_args', return_value=[]):
+            with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
+                sugar_swarm._cmd_inspect(service='', stack='svc1')
+                mock_error.assert_called_once_with(
+                    """Both service name and stack name must be
+              provided together for inspect""",
+                    SugarError.SUGAR_INVALID_PARAMETER,
+                )
+
+    def test_cmd_logs(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_logs formats options correctly."""
+        with mock.patch.object(
+            sugar_swarm, '_get_services_names', return_value=['svc1']
+        ):
+            with mock.patch.object(
+                sugar_swarm, '_get_list_args', return_value=[]
+            ):
+                with mock.patch.object(
+                    sugar_swarm, '_call_service_command'
+                ) as mock_call:
+                    sugar_swarm._cmd_logs(
+                        services='svc1',
+                        stack='test-stack',
+                        details=True,
+                        follow=True,
+                        since='2h',
+                        tail='100',
+                    )
+                    mock_call.assert_called_once_with(
+                        'logs',
+                        services=['test-stack_svc1'],
+                        options_args=[
+                            '--details',
+                            '--follow',
+                            '--since',
+                            '2h',
+                            '--tail',
+                            '100',
+                        ],
+                    )
+
     def test_cmd_ls_without_stack(self, sugar_swarm: SugarSwarm) -> None:
         """Test _cmd_ls without stack parameter calls service ls."""
         with mock.patch.object(sugar_swarm, '_get_list_args', return_value=[]):
@@ -322,6 +403,157 @@ class TestSugarSwarm:
 
         result = sugar_swarm._get_services_from_stack('test-stack')
         assert result == ['service1', 'service2', 'service3']
+
+    def test_perform_service_rollback_success(
+        self, sugar_swarm: SugarSwarm
+    ) -> None:
+        """Test _perform_service_rollback returns True on success."""
+        sugar_swarm.backend_app.return_value = None
+        result = sugar_swarm._perform_service_rollback('svc1', [])
+        assert result is True
+
+    def test_perform_service_rollback_no_previous_spec(
+        self, sugar_swarm: SugarSwarm
+    ) -> None:
+        """Test  returns False when no previous spec."""
+        error_output = io.StringIO(
+            'service svc1 does not have a previous spec'
+        )
+        print('error_output :', error_output)
+        sugar_swarm.backend_app.return_value = None
+        sugar_swarm.backend_app.side_effect = (
+            lambda *args, _err=None, **kwargs: _err.write(
+                'service svc1 does not have a previous spec'
+            )
+            if _err is not None
+            else None
+        )
+
+        with mock.patch.object(SugarLogs, 'print_warning') as mock_warning:
+            result = sugar_swarm._perform_service_rollback('svc1', [])
+            assert result is False
+            mock_warning.assert_called_once()
+
+    def test_get_services_to_rollback_with_stack_and_all(
+        self, sugar_swarm: SugarSwarm
+    ) -> None:
+        """Test _get_services_to_rollback with stack and all=True."""
+        with mock.patch.object(
+            sugar_swarm,
+            '_get_services_from_stack',
+            return_value=['stack_svc1', 'stack_svc2'],
+        ):
+            result = sugar_swarm._get_services_to_rollback('', True, 'stack')
+            assert result == ['stack_svc1', 'stack_svc2']
+
+    def test_get_services_to_rollback_with_stack_and_services(
+        self, sugar_swarm: SugarSwarm
+    ) -> None:
+        """Test _get_services_to_rollback with stack and services."""
+        result = sugar_swarm._get_services_to_rollback(
+            'svc1,svc2', False, 'stack'
+        )
+        assert result == ['stack_svc1', 'stack_svc2']
+
+    def test_cmd_rollback(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_rollback performs rollbacks and reports results."""
+        with mock.patch.object(sugar_swarm, '_get_list_args', return_value=[]):
+            with mock.patch.object(
+                sugar_swarm,
+                '_get_services_to_rollback',
+                return_value=['svc1', 'svc2'],
+            ):
+                with mock.patch.object(
+                    sugar_swarm,
+                    '_perform_service_rollback',
+                    side_effect=[True, False],
+                ) as mock_rollback:
+                    with mock.patch('builtins.print') as mock_print:
+                        sugar_swarm._cmd_rollback(services='svc1,svc2')
+                        ROLLBACK_CALL_COUNT = 2
+                        assert mock_rollback.call_count == ROLLBACK_CALL_COUNT
+                        # Use assert_called_once to verify the print was called
+                        mock_print.assert_called_once()
+                        # Check individual components of the message
+                        call_args = mock_print.call_args[0][0]
+                        assert 'Rollback complete' in call_args
+                        assert 'succeeded' in call_args
+                        assert 'failed' in call_args
+                        # Verify the counts are correct
+                        assert '1' in call_args
+
+    def test_cmd_scale_missing_stack(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_scale raises error when stack name is missing."""
+        with mock.patch(
+            'sugar.logs.SugarLogs.raise_error', side_effect=SystemExit
+        ) as mock_error:
+            with pytest.raises(SystemExit):
+                sugar_swarm._cmd_scale()
+            mock_error.assert_called_once()
+
+    def test_cmd_scale_missing_replicas(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_scale raises error when replicas is missing."""
+        with mock.patch(
+            'sugar.logs.SugarLogs.raise_error', side_effect=SystemExit
+        ) as mock_error:
+            with pytest.raises(SystemExit):
+                sugar_swarm._cmd_scale(stack='test-stack')
+            mock_error.assert_called_once()
+
+    def test_cmd_scale(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_scale formats arguments correctly."""
+        with mock.patch.object(sugar_swarm, '_get_list_args', return_value=[]):
+            with mock.patch.object(
+                sugar_swarm, '_call_service_command'
+            ) as mock_call:
+                sugar_swarm._cmd_scale(
+                    stack='test', replicas='svc1=3,svc2=5', detach=True
+                )
+                mock_call.assert_called_once_with(
+                    'scale',
+                    services=['test_svc1=3', 'test_svc2=5'],
+                    options_args=['--detach'],
+                )
+
+    @pytest.mark.skip(
+        reason='This test is experimental, need to add '
+        'more test cases and more integrations to the  cli'
+    )
+    def test_cmd_update(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_update formats options correctly."""
+        with mock.patch.object(
+            sugar_swarm, '_get_services_names', return_value=['svc1']
+        ):
+            with mock.patch.object(
+                sugar_swarm, '_get_list_args', return_value=[]
+            ):
+                with mock.patch.object(
+                    sugar_swarm, '_call_service_command'
+                ) as mock_call:
+                    sugar_swarm._cmd_update(
+                        services='svc1',
+                        image='nginx:latest',
+                        replicas='3',
+                        force=True,
+                        detach=True,
+                        env_add='DEBUG=1,LOG_LEVEL=info',
+                    )
+                    mock_call.assert_called_once_with(
+                        'update',
+                        services=['svc1'],
+                        options_args=[
+                            '--detach',
+                            '--force',
+                            '--image',
+                            'nginx:latest',
+                            '--replicas',
+                            '3',
+                            '--env-add',
+                            'DEBUG=1',
+                            '--env-add',
+                            'LOG_LEVEL=info',
+                        ],
+                    )
 
     def test_cmd_node(self, sugar_swarm: SugarSwarm) -> None:
         """Test _cmd_node calls appropriate subcommand."""
