@@ -11,6 +11,7 @@ The swarm extension provides commands for:
 - Initializing and joining swarm clusters
 - Deploying, inspecting, and removing stacks
 - Managing swarm services (listing, scaling, updating, rolling back)
+- Direct service management with granular control
 - Managing swarm nodes
 
 ## Configuration
@@ -182,6 +183,137 @@ Rollback all services in a stack:
 
 ```bash
 $ sugar swarm rollback --stack my_stack --all
+```
+
+## Service Commands
+
+Sugar provides direct service management through the `service` subcommand, which
+offers more granular control over individual Docker Swarm services:
+
+### Create a Service
+
+Create a new service in the swarm:
+
+```bash
+$ sugar swarm service --create --options "--name web nginx"
+```
+
+Create a service with additional parameters:
+
+```bash
+$ sugar swarm service --create --options "--name api --replicas 3 --publish 8080:80 my-api:latest"
+```
+
+### Inspect a Service
+
+Get detailed information about a specific service:
+
+```bash
+$ sugar swarm service --inspect web
+```
+
+Inspect multiple services:
+
+```bash
+$ sugar swarm service --inspect web,api,database
+```
+
+### View Service Logs
+
+Fetch logs from a service:
+
+```bash
+$ sugar swarm service --logs web
+```
+
+View logs with additional options:
+
+```bash
+$ sugar swarm service --logs web --options "--follow --tail 100"
+```
+
+### List Services
+
+List all services in the swarm:
+
+```bash
+$ sugar swarm service --ls
+```
+
+List services with custom formatting:
+
+```bash
+$ sugar swarm service --ls --options "--format 'table {{.Name}}\t{{.Mode}}\t{{.Replicas}}'"
+```
+
+### List Service Tasks
+
+List tasks for a specific service:
+
+```bash
+$ sugar swarm service --ps web
+```
+
+List tasks for multiple services:
+
+```bash
+$ sugar swarm service --ps web,api
+```
+
+### Scale a Service
+
+Scale one or more services:
+
+```bash
+$ sugar swarm service --scale "web=3"
+```
+
+Scale multiple services:
+
+```bash
+$ sugar swarm service --scale "web=3,api=5,worker=2"
+```
+
+### Update a Service
+
+Update a service configuration:
+
+```bash
+$ sugar swarm service --update web --options "--image nginx:alpine"
+```
+
+Update with multiple parameters:
+
+```bash
+$ sugar swarm service --update api --options "--image my-api:v2 --replicas 5"
+```
+
+### Rollback a Service
+
+Rollback a service to its previous configuration:
+
+```bash
+$ sugar swarm service --rollback web
+```
+
+Rollback multiple services:
+
+```bash
+$ sugar swarm service --rollback web,api
+```
+
+### Remove a Service
+
+Remove one or more services:
+
+```bash
+$ sugar swarm service --rm web
+```
+
+Remove multiple services:
+
+```bash
+$ sugar swarm service --rm web,api,worker
 ```
 
 ## Node Management
