@@ -393,6 +393,17 @@ groups:
           echo $'\033[32mTesting stack rollback all services in a stack...\033[0m'
           sugar ${{ vars.SUGAR_FLAGS }} swarm rollback --stack test-stack --all
 
+          # Test swarm service subcommand
+          echo $'\033[32mTesting swarm service commands...\033[0m'
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --create --options "--name web nginx"
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --inspect web
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --logs web
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --ps web
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --update web --options "--image nginx:alpine"
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --scale "web=3"
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --rollback web
+          sugar ${{ vars.SUGAR_FLAGS }} swarm service --rm web
+
           # Test node commands
           echo $'\033[32mTesting node commands...\033[0m'
           sugar swarm node --ls

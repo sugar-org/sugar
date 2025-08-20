@@ -99,6 +99,19 @@ doc_node_options = {
     'update': 'Update a node',
 }
 
+# Service command specific docs
+doc_service_options = {
+    'create': 'Create a new service',
+    'inspect': 'Display detailed information on one or more services',
+    'logs': 'Fetch the logs of a service or task',
+    'ls': 'List services',
+    'ps': 'List the tasks of one or more services',
+    'rm': 'Remove one or more services',
+    'rollback': "Revert changes to a service's configuration",
+    'scale': 'Scale one or multiple replicated services',
+    'update': 'Update a service',
+}
+
 doc_logs_options = {
     'details': 'Show extra details provided to logs',
     'stack': 'Name of the stack to inspect',
@@ -111,6 +124,18 @@ doc_logs_options = {
     (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)""",
     'tail': 'Number of lines to show from the end of the logs (default all)',
     'timestamps': 'Show timestamps',
+}
+
+doc_service_options = {
+    'create': 'Create a new service (use --options for all parameters)',
+    'inspect': 'Display detailed information on one or more services',
+    'logs': 'Fetch the logs of a service or task',
+    'ls': 'List services',
+    'ps': 'List the tasks of one or more services',
+    'rm': 'Remove one or more services',
+    'rollback': "Revert changes to a service's configuration",
+    'scale': 'Scale one or multiple replicated services',
+    'update': 'Update a service',
 }
 
 doc_rollback_options = {
@@ -814,6 +839,212 @@ class SugarSwarm(SugarBase):
             'scale',
             services=service_replicas_pairs,
             options_args=options_args,
+        )
+
+    @docparams(
+        {
+            **doc_profile,
+            **doc_options,
+            **doc_service_options,
+        }
+    )
+    def _cmd_service(
+        self,
+        /,
+        create: bool = False,
+        inspect: str = '',
+        logs: str = '',
+        ls: bool = False,
+        ps: str = '',
+        rm: str = '',
+        rollback: str = '',
+        scale: str = '',
+        update: str = '',
+        options: str = '',
+    ) -> None:
+        """
+        Manage Docker Swarm services.
+
+        This command provides access to service-related subcommands for
+        managing Docker Swarm services.
+        """
+        if create:
+            self._subcmd_service_create(options=options)
+        elif inspect:
+            self._subcmd_service_inspect(services=inspect, options=options)
+        elif logs:
+            self._subcmd_service_logs(services=logs, options=options)
+        elif ls:
+            self._subcmd_service_ls(options=options)
+        elif ps:
+            self._subcmd_service_ps(services=ps, options=options)
+        elif rm:
+            self._subcmd_service_rm(services=rm, options=options)
+        elif rollback:
+            self._subcmd_service_rollback(services=rollback, options=options)
+        elif scale:
+            self._subcmd_service_scale(services=scale, options=options)
+        elif update:
+            self._subcmd_service_update(services=update, options=options)
+        else:
+            SugarLogs.print_warning(
+                (
+                    'No service subcommand specified. Please use one of: '
+                    'create, inspect, logs, ls, ps, rm, rollback, scale,update'
+                )
+            )
+
+    def _subcmd_service_create(
+        self,
+        service: str = '',
+        options: str = '',
+    ) -> None:
+        """Create a new service."""
+        if not options:
+            SugarLogs.raise_error(
+                'Options must be provided for the "create" command. '
+                'Include --name, image, and other parameters in --options.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'create', services=[], options_args=options_args
+        )
+
+    def _subcmd_service_inspect(
+        self,
+        services: str = '',
+        options: str = '',
+    ) -> None:
+        """Display detailed information on one or more services."""
+        service_names = [service for service in services.split(',') if service]
+        if not service_names:
+            SugarLogs.raise_error(
+                'Service name(s) must be provided for the "inspect" command.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'inspect', services=service_names, options_args=options_args
+        )
+
+    def _subcmd_service_logs(
+        self,
+        services: str = '',
+        options: str = '',
+    ) -> None:
+        """Fetch the logs of a service or task."""
+        service_names = [service for service in services.split(',') if service]
+        if not service_names:
+            SugarLogs.raise_error(
+                'Service name(s) must be provided for the "logs" command.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'logs', services=service_names, options_args=options_args
+        )
+
+    def _subcmd_service_ls(
+        self,
+        options: str = '',
+    ) -> None:
+        """List services."""
+        options_args = self._get_list_args(options)
+        self._call_service_command('ls', options_args=options_args)
+
+    def _subcmd_service_ps(
+        self,
+        services: str = '',
+        options: str = '',
+    ) -> None:
+        """List the tasks of one or more services."""
+        service_names = [service for service in services.split(',') if service]
+        if not service_names:
+            SugarLogs.raise_error(
+                'Service name(s) must be provided for the "ps" command.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'ps', services=service_names, options_args=options_args
+        )
+
+    def _subcmd_service_rm(
+        self,
+        services: str = '',
+        options: str = '',
+    ) -> None:
+        """Remove one or more services."""
+        service_names = [service for service in services.split(',') if service]
+        if not service_names:
+            SugarLogs.raise_error(
+                'Service name(s) must be provided for the "rm" command.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'rm', services=service_names, options_args=options_args
+        )
+
+    def _subcmd_service_rollback(
+        self,
+        services: str = '',
+        options: str = '',
+    ) -> None:
+        """Revert changes to a service's configuration."""
+        service_names = [service for service in services.split(',') if service]
+        if not service_names:
+            SugarLogs.raise_error(
+                'Service name(s) must be provided for the "rollback" command.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'rollback', services=service_names, options_args=options_args
+        )
+
+    def _subcmd_service_scale(
+        self,
+        services: str = '',
+        options: str = '',
+    ) -> None:
+        """Scale one or multiple replicated services.
+
+        For scale, services should be in format
+        "service=replicas,service2=replicas2".
+
+        """
+        if not services:
+            SugarLogs.raise_error(
+                'Services must be provided for the "scale" command in format '
+                'service=replicas.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+
+        service_replicas = [
+            service for service in services.split(',') if service
+        ]
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'scale', services=service_replicas, options_args=options_args
+        )
+
+    def _subcmd_service_update(
+        self,
+        services: str = '',
+        options: str = '',
+    ) -> None:
+        """Update a service."""
+        service_names = [service for service in services.split(',') if service]
+        if not service_names:
+            SugarLogs.raise_error(
+                'Service name(s) must be provided for the "update" command.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+        options_args = self._get_list_args(options)
+        self._call_service_command(
+            'update', services=service_names, options_args=options_args
         )
 
     @docparams({**doc_common_services, **doc_update_options})
