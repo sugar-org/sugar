@@ -11,10 +11,10 @@
         <link rel="canonical" href="https://osl-incubator.github.io/sugar/swarm/">
       
       
-        <link rel="prev" href="../installation/">
+        <link rel="prev" href="../contributing/">
       
       
-        <link rel="next" href="../podman-ext/">
+        <link rel="next" href="../changelog/">
       
       
       <link rel="icon" href="../images/favicon.ico">
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sugar-swarm-commands" class="md-skip">
+        <a href="#macro-syntax-error" class="md-skip">
           Skip to content
         </a>
       
@@ -283,18 +283,6 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Swarm Usage
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -305,271 +293,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      Overview
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Commands
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic Commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#initialize-a-swarm" class="md-nav__link">
-    <span class="md-ellipsis">
-      Initialize a Swarm
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#join-a-swarm" class="md-nav__link">
-    <span class="md-ellipsis">
-      Join a Swarm
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#stack-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      Stack Management
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Stack Management">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#deploy-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Deploy a Stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list-services-in-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Services in a Stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list-tasks-in-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Tasks in a Stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#remove-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Remove a Stack
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#service-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      Service Management
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Service Management">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-all-services" class="md-nav__link">
-    <span class="md-ellipsis">
-      List All Services
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#node-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      Node Management
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Node Management">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#inspect-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Inspect Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#promote-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Promote Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#demote-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Demote Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list-tasks-on-a-node" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Tasks on a Node
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#remove-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Remove Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#update-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Update Nodes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#command-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Command Options
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#advanced-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Advanced Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Advanced Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-multiple-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using Multiple Options
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-with-profiles" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using with Profiles
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -621,6 +344,37 @@
       
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Swarm Usage
+    
+  </span>
+  
+
+      </a>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
   
   
     <li class="md-nav__item">
@@ -658,260 +412,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      Overview
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#basic-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      Basic Commands
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Basic Commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#initialize-a-swarm" class="md-nav__link">
-    <span class="md-ellipsis">
-      Initialize a Swarm
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#join-a-swarm" class="md-nav__link">
-    <span class="md-ellipsis">
-      Join a Swarm
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#stack-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      Stack Management
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Stack Management">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#deploy-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Deploy a Stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list-services-in-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Services in a Stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list-tasks-in-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Tasks in a Stack
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#remove-a-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      Remove a Stack
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#service-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      Service Management
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Service Management">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-all-services" class="md-nav__link">
-    <span class="md-ellipsis">
-      List All Services
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#node-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      Node Management
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Node Management">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#inspect-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Inspect Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#promote-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Promote Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#demote-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Demote Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list-tasks-on-a-node" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Tasks on a Node
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#remove-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Remove Nodes
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#update-nodes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Update Nodes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#command-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Command Options
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#advanced-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Advanced Usage
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Advanced Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-multiple-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using Multiple Options
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-with-profiles" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using with Profiles
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -929,139 +429,10 @@
   
 
 
-<h1 id="sugar-swarm-commands">Sugar Swarm Commands</h1>
-<p>Sugar provides support for Docker Swarm commands through its swarm extension.
-This allows you to manage Docker Swarm clusters, services, and stacks using a
-simplified interface.</p>
-<h2 id="overview">Overview</h2>
-<p>The swarm extension provides commands for:</p>
-<ul>
-<li>Initializing and joining swarm clusters</li>
-<li>Deploying, inspecting, and removing stacks</li>
-<li>Managing swarm services (listing, scaling, updating, rolling back)</li>
-<li>Managing swarm nodes</li>
-</ul>
-<h2 id="configuration">Configuration</h2>
-<p>To use the swarm extension, you need to set the backend to <code>swarm</code> in your
-<code>.sugar.yaml</code> configuration file:</p>
-<div class="highlight"><pre><span></span><code><span class="nt">backend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compose</span>
-<span class="nt">env-file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.env</span>
-<span class="nt">defaults</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile1</span>
-<span class="w">  </span><span class="nt">project-name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sugar</span>
-<span class="nt">profiles</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">profile1</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">project-name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">project1</span>
-<span class="w">    </span><span class="nt">config-path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tests/containers/profile1/compose.yaml</span>
-<span class="w">    </span><span class="nt">env-file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.env</span>
-<span class="w">    </span><span class="nt">services</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service1-1,service1-3</span>
-<span class="w">      </span><span class="nt">available</span><span class="p">:</span>
-<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service1-1</span>
-<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service1-2</span>
-<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service1-3</span>
-<span class="w">  </span><span class="nt">profile2</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">config-path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tests/containers/profile2/compose.yaml</span>
-<span class="w">    </span><span class="nt">env-file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.env</span>
-<span class="w">    </span><span class="nt">services</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">available</span><span class="p">:</span>
-<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service2-1</span>
-<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service2-2</span>
-</code></pre></div>
-<h2 id="basic-commands">Basic Commands</h2>
-<h3 id="initialize-a-swarm">Initialize a Swarm</h3>
-<p>Initialize a new Docker Swarm on the current engine:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>init<span class="w"> </span>--options<span class="w"> </span><span class="s2">&quot;--advertise-addr 192.168.1.1&quot;</span>
-</code></pre></div>
-<h3 id="join-a-swarm">Join a Swarm</h3>
-<p>Join an existing swarm as a worker or manager node:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>join<span class="w"> </span>--options<span class="w"> </span><span class="s2">&quot;--token SWMTKN-1-... 192.168.1.1:2377&quot;</span>
-</code></pre></div>
-<h2 id="stack-management">Stack Management</h2>
-<h3 id="deploy-a-stack">Deploy a Stack</h3>
-<p>Deploy a stack from a sugar compose file:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>deploy<span class="w"> </span>--stack<span class="w"> </span>my_stack<span class="w"> </span>--file<span class="w"> </span>./.sugar-prod.yml
-</code></pre></div>
-<p>or</p>
-<p>if <code>.sugar.yml</code> file is present in the your current project root directory</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>deploy<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<p>You can also use a <code>profile2</code> compose file:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>deploy<span class="w"> </span>--stack<span class="w"> </span>my_stack<span class="w"> </span>--profile<span class="w"> </span>profile2
-</code></pre></div>
-<h3 id="list-services-in-a-stack">List Services in a Stack</h3>
-<p>List services in a specific stack:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>ls<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<h3 id="list-tasks-in-a-stack">List Tasks in a Stack</h3>
-<p>List the tasks in a stack:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>ps<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<h3 id="remove-a-stack">Remove a Stack</h3>
-<p>Remove a deployed stack:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>rm<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<h2 id="service-management">Service Management</h2>
-<h3 id="list-all-services">List All Services</h3>
-<p>List all services in the swarm:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>ls
-</code></pre></div>
-<p>List all services in a specific stack in the swarm</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>ls<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<h2 id="node-management">Node Management</h2>
-<p>Sugar provides a complete set of commands to manage swarm nodes through the
-<code>node</code> subcommand:</p>
-<h3 id="list-nodes">List Nodes</h3>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>node<span class="w"> </span>ls
-</code></pre></div>
-<h3 id="inspect-nodes">Inspect Nodes</h3>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>node<span class="w"> </span>--inspect<span class="w"> </span>node-id1,node-id2
-</code></pre></div>
-<h3 id="promote-nodes">Promote Nodes</h3>
-<p>Promote a worker node to manager:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>node<span class="w"> </span>--promote<span class="w"> </span>node-id
-</code></pre></div>
-<h3 id="demote-nodes">Demote Nodes</h3>
-<p>Demote a manager node to worker:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>node<span class="w"> </span>--demote<span class="w"> </span>node-id
-</code></pre></div>
-<h3 id="list-tasks-on-a-node">List Tasks on a Node</h3>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>node<span class="w"> </span>--ps<span class="w"> </span>node-id
-</code></pre></div>
-<h3 id="remove-nodes">Remove Nodes</h3>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>node<span class="w"> </span>--rm<span class="w"> </span>node-id
-</code></pre></div>
-<h3 id="update-nodes">Update Nodes</h3>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>node<span class="w"> </span>--update<span class="w"> </span>node-id<span class="w"> </span>--options<span class="w"> </span><span class="s2">&quot;--availability drain&quot;</span>
-</code></pre></div>
-<h2 id="command-options">Command Options</h2>
-<p>Most swarm commands accept the following common options:</p>
-<ul>
-<li><code>--profile</code>: Specify the profile name to use</li>
-<li><code>--options</code>: Pass additional options to the underlying Docker command</li>
-<li><code>--services</code>: Specify a comma-separated list of services</li>
-<li><code>--all</code>: Apply the command to all services</li>
-<li><code>--stack</code>: Specify a stack name for stack operations</li>
-</ul>
-<h2 id="advanced-usage">Advanced Usage</h2>
-<h3 id="using-multiple-options">Using Multiple Options</h3>
-<p>You can combine multiple options for complex operations:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>swarm<span class="w"> </span>update<span class="w"> </span>--services<span class="w"> </span>web-service<span class="w"> </span>--image<span class="w"> </span>nginx:alpine<span class="w"> </span>--replicas<span class="w"> </span><span class="m">3</span><span class="w"> </span>--detach<span class="w"> </span>--env_add<span class="w"> </span><span class="s2">&quot;MODE=production,DEBUG=false&quot;</span>
-</code></pre></div>
-<h3 id="using-with-profiles">Using with Profiles</h3>
-<p>Leverage Sugar profiles to manage different Swarm configurations:</p>
-<p>Production Profile:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>--profile<span class="w"> </span>production<span class="w"> </span>swarm<span class="w"> </span>deploy<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<p>Development Profile:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>--profile<span class="w"> </span>dev<span class="w"> </span>swarm<span class="w"> </span>deploy<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<p>Testing Profile:</p>
-<div class="highlight"><pre><span></span><code>$<span class="w"> </span>sugar<span class="w"> </span>--profile<span class="w"> </span><span class="nb">test</span><span class="w"> </span>swarm<span class="w"> </span>deploy<span class="w"> </span>--stack<span class="w"> </span>my_stack
-</code></pre></div>
-<p>This allows you to maintain different configurations for different environments
-within the same project.</p>
+<h1 id="macro-syntax-error"><em>Macro Syntax Error</em></h1>
+<p><em>Line 246 in Markdown file:</em> <strong>unexpected '.'</strong> 
+<div class="highlight"><pre><span></span><code><span class="err">$</span> <span class="n">sugar</span> <span class="n">swarm</span> <span class="n">service</span> <span class="o">--</span><span class="n">ls</span> <span class="o">--</span><span class="n">options</span> <span class="s2">&quot;--format &#39;table {{.Name}}</span><span class="se">\t</span><span class="s2">{{.Mode}}</span><span class="se">\t</span><span class="s2">{{.Replicas}}&#39;&quot;</span>
+</code></pre></div></p>
 
 
 
