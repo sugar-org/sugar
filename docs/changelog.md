@@ -1,6 +1,14 @@
 # Release Notes
 ---
 
+# [1.18.0](https://github.com/sugar-org/sugar/compare/1.17.0...1.18.0) (2025-08-20)
+
+
+### Features
+
+* Implementation of swarm orchestration and management for sugar workflows  ([#188](https://github.com/sugar-org/sugar/issues/188)) ([8748054](https://github.com/sugar-org/sugar/commit/87480544b7f8cd4d33237b8acaf1bdce1f6c0fb7))
+* Support for Docker Swarm Service management with  Sugar CLI ([#190](https://github.com/sugar-org/sugar/issues/190)) ([2ce843a](https://github.com/sugar-org/sugar/commit/2ce843a9e9e98d5f880df7fe933d565c63a6c45b))
+
 # [1.17.0](https://github.com/osl-incubator/sugar/compare/1.16.1...1.17.0) (2025-05-03)
 
 
