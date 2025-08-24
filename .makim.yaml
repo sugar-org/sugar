@@ -347,20 +347,20 @@ groups:
 
           # Test stack commands
           echo $'\033[32mTesting stack deployment...\033[0m'
-          sugar ${{ vars.SUGAR_FLAGS }} swarm deploy --stack test-stack
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:stack deploy --stack test-stack
 
           # List services (with and without stack filter)
           echo $'\033[32mTesting service listing...\033[0m'
           sugar ${{ vars.SUGAR_FLAGS }} swarm ls
-          sugar ${{ vars.SUGAR_FLAGS }} swarm ls --stack test-stack
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:stack ls --stack test-stack
 
           # Test stack ps command
           echo $'\033[32mTesting stack ps command...\033[0m'
-          sugar ${{ vars.SUGAR_FLAGS }} swarm ps --stack test-stack
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:stack ps --stack test-stack
 
           # Test service inspection
           echo $'\033[32mTesting service inspection...\033[0m'
-          sugar ${{ vars.SUGAR_FLAGS }} swarm inspect --service service1-1 --stack test-stack
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:stack inspect --service service1-1 --stack test-stack
 
           # Test service1-1 , service1-2 and service1-3 service three times ping
           for port in 18000 18001 18002; do
@@ -372,13 +372,13 @@ groups:
 
           # Test service logs (limited command to avoid test hanging)
           echo $'\033[32mTesting service logs...\033[0m'
-          sugar ${{ vars.SUGAR_FLAGS }} swarm logs --services service1-1 --stack test-stack --tail 10
-          sugar ${{ vars.SUGAR_FLAGS }} swarm logs --services service1-2 --stack test-stack --tail 10
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:service logs --services service1-1 --stack test-stack --tail 10
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:service logs --services service1-2 --stack test-stack --tail 10
 
 
           # Test service scaling
           echo $'\033[32mTesting service scaling...\033[0m'
-          sugar ${{ vars.SUGAR_FLAGS }} swarm scale --stack test-stack --replicas service1-1=2,service1-2=3
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:service scale --stack test-stack --replicas service1-1=2,service1-2=3
 
           # TODO : sugar swarm update is yet to be implemented and experimental stage
           # Test service update
@@ -387,11 +387,11 @@ groups:
 
           # Test service rollback
           echo $'\033[32mTesting service rollback specific services in a stack...\033[0m'
-          sugar ${{ vars.SUGAR_FLAGS }} swarm rollback --services service1-1,service1-3 --stack test-stack
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:service rollback --services service1-1,service1-3 test-stack
 
           # Test rollback with stack parameter
           echo $'\033[32mTesting stack rollback all services in a stack...\033[0m'
-          sugar ${{ vars.SUGAR_FLAGS }} swarm rollback --stack test-stack --all
+          sugar ${{ vars.SUGAR_FLAGS }} swarm:service rollback test-stack --all
 
           # Test swarm service subcommand
           echo $'\033[32mTesting swarm service commands...\033[0m'
@@ -406,11 +406,11 @@ groups:
 
           # Test node commands
           echo $'\033[32mTesting node commands...\033[0m'
-          sugar swarm node --ls
+          sugar swarm:node ls
           NODE_ID=$(docker node ls --format "{{.ID}}" )
           echo $'\033[32mNode ID: $NODE_ID\033[0m'
-          sugar swarm node --inspect $NODE_ID
-          sugar swarm node --ps $NODE_ID
+          sugar swarm:node inspect $NODE_ID
+          sugar swarm:node ps $NODE_ID
 
 
           # Leave swarm

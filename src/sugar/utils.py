@@ -51,5 +51,5 @@ def prepend_stack_name(stack_name: str, services: list[str]) -> list[str]:
         The list of services with the stack name prepended.
     """
     if not stack_name:
-        raise ValueError('Stack name is needed')
+        raise ValueError('Stack name must be provided')
     return [f'{stack_name}_{service}' for service in services]

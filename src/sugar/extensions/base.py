@@ -119,11 +119,21 @@ class SugarBase(ABC):
         self,
         action: str,
         services: list[str] = [],
+        nodes: list[str] = [],
         options_args: list[str] = [],
         cmd_args: list[str] = [],
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
         _err: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stderr,
     ) -> None:
+        # validation
+        if services and nodes:
+            SugarLogs.raise_error(
+                'Give services or nodes arguments, not both.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+
+        nodes_or_services = services or nodes
+
         # Execute pre-run hooks
         extension = camel_to_snake(
             self.__class__.__name__.replace('Sugar', '')
@@ -144,7 +154,7 @@ class SugarBase(ABC):
             *self.backend_args,
             *[action],
             *options_args,
-            *services,
+            *nodes_or_services,
             *cmd_args,
         ]
 

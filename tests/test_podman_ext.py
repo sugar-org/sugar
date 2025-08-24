@@ -236,7 +236,9 @@ class TestSugarPodmanComposeExt:
         podman_ext.backend_app = mock_backend_app
 
         with patch.object(podman_ext, '_execute_hooks') as mock_hooks:
-            podman_ext._call_backend_app('up', ['service1'], ['-d'])
+            podman_ext._call_backend_app(
+                action='up', services=['service1'], options_args=['-d']
+            )
 
             podman_ext.backend_app.assert_called_with(
                 *podman_ext.backend_args,
