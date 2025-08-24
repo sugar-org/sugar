@@ -24,9 +24,9 @@ from sugar.extensions.base import SugarBase
 from sugar.logs import SugarError, SugarLogs
 from sugar.utils import prepend_stack_name
 
-# ------------------------------
-# Shared doc metadata
-# ------------------------------
+MSG_ERROR_STACK_NAME = 'Stack name must be provided'
+MSG_ERROR_NODES_NAME = 'Node name(s) must be provided'
+
 doc_profile = {
     'profile': 'Specify the profile name of the services you want to use.'
 }
@@ -63,9 +63,7 @@ doc_common_services = {
 
 doc_common_services_stack = {**doc_common_services, **doc_stack}
 
-doc_stack_ls = {**doc_stack, **doc_options}
-doc_stack_rm = {**doc_stack, **doc_options}
-doc_stack_ps = {**doc_stack, **doc_options}
+doc_stack_plus_options = {**doc_stack, **doc_options}
 
 doc_common_node = {**doc_profile, **doc_node, **doc_options}
 doc_common_nodes = {**doc_profile, **doc_nodes, **doc_all_nodes, **doc_options}
@@ -101,7 +99,7 @@ doc_service_options = {
 }
 
 # Service command specific docs
-doc_logs_options = {
+doc_services_logs_options = {
     'details': 'Show extra details provided to logs',
     'stack': 'Name of the stack to inspect',
     'follow': 'Follow log output',
@@ -223,19 +221,32 @@ class SugarSwarmBase(SugarBase):
         self,
         subcommand: str,
         services: list[str] = [],
+        nodes: list[str] = [],
         options_args: list[str] = [],
         cmd_args: list[str] = [],
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
         _err: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stderr,
     ) -> None:
         """Call docker swarm commands with proper structure."""
+        if services and nodes:
+            SugarLogs.raise_error(
+                'Give services or nodes arguments, not both.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
+
+        nodes_or_services: dict[str, list[str]] = {'services': []}
+        if services:
+            nodes_or_services = {'services': services}
+        elif nodes:
+            nodes_or_services = {'nodes': nodes}
+
         self._call_backend_app(
             subcommand,
-            services=services,
             options_args=options_args,
             cmd_args=cmd_args,
             _out=_out,
             _err=_err,
+            **nodes_or_services,
         )
 
     def _get_services_from_stack(self, stack: str) -> list[str]:
@@ -302,81 +313,6 @@ class SugarSwarm(SugarSwarmBase):
         """Join a swarm as a node and/or manager."""
         options_args = self._get_list_args(options)
         self._call_command('join', options_args=options_args)
-
-    @docparams(
-        {
-            **doc_profile,
-            'service': 'Name of the service to inspect',
-            'stack': 'Name of the stack to inspect',
-            'format': 'Format output using a custom template',
-            'size': 'Display total file sizes if the type is container',
-            'type': 'Return JSON for specified type',
-            **doc_options,
-        }
-    )
-    def _cmd_inspect(
-        self,
-        service: str = '',
-        stack: str = '',
-        format: str = '',
-        size: bool = False,
-        type: str = '',
-        options: str = '',
-    ) -> None:
-        """
-        Display detailed information on a Docker service.
-
-        Returns low-level information on a single Docker service.
-        For inspecting multiple objects, use docker inspect directly.
-        """
-        # Validate only one service is provided (no commas)
-        if ',' in service:
-            SugarLogs.raise_error(
-                'Only one service can be inspected at a time. '
-                'Multiple services are not supported.',
-                SugarError.SUGAR_INVALID_PARAMETER,
-            )
-        # Raise error if only stack is provided without service, or only
-        # service without stack
-        if not (service and stack):
-            SugarLogs.raise_error(
-                """Both service name and stack name must be
-              provided together for inspect""",
-                SugarError.SUGAR_INVALID_PARAMETER,
-            )
-
-        # Create a single-item list with the service name
-        service_name = service.strip() if service else ''
-
-        if service_name:
-            services_names = [service_name]
-            if stack:
-                # Prepend stack name if specified
-                services_names = [f'{stack}_{service_name}']
-        else:
-            services_names = []
-
-        # Prepare the options with the format flag if provided
-        options_list = self._get_list_args(options)
-
-        # Process formatting options
-        if format:
-            options_list.extend(['--format', format])
-
-        if size:
-            options_list.append('--size')
-
-        if type:
-            options_list.extend(['--type', type])
-
-        # Use direct docker inspect command instead
-        # of service-specific inspect
-        self.backend_args = []  # Reset backend args use direct docker command
-        self._call_backend_app(
-            'inspect',
-            services=services_names,
-            options_args=options_list,
-        )
 
     @docparams({**doc_common_services, **doc_update_options})
     def _cmd_update(
@@ -493,7 +429,7 @@ class SugarSwarmService(SugarSwarmBase):
             options_args=self._get_list_args(options),
         )
 
-    @docparams({**doc_common_services, **doc_logs_options})
+    @docparams({**doc_common_services, **doc_services_logs_options})
     def _cmd_logs(
         self,
         services: str = '',
@@ -706,7 +642,7 @@ class SugarSwarmStack(SugarSwarmBase):
         # Validate stack name
         if not stack:
             SugarLogs.raise_error(
-                'Stack name must be provided for stack deployment',
+                MSG_ERROR_STACK_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -761,7 +697,7 @@ class SugarSwarmStack(SugarSwarmBase):
 
     @docparams(
         {
-            **doc_stack_ls,
+            **doc_stack_plus_options,
             'quiet': 'Only display IDs',
         }
     )
@@ -775,7 +711,7 @@ class SugarSwarmStack(SugarSwarmBase):
         """List the tasks in the stack."""
         if not stack:
             SugarLogs.raise_error(
-                'Stack name must be provided for stack ps command',
+                MSG_ERROR_STACK_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -793,7 +729,7 @@ class SugarSwarmStack(SugarSwarmBase):
 
     @docparams(
         {
-            **doc_stack_rm,
+            **doc_stack_plus_options,
             'quiet': 'Only display IDs',
         }
     )
@@ -807,7 +743,7 @@ class SugarSwarmStack(SugarSwarmBase):
         """List the tasks in the stack."""
         if not stack:
             SugarLogs.raise_error(
-                'Stack name must be provided for stack ps command',
+                MSG_ERROR_STACK_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -823,7 +759,7 @@ class SugarSwarmStack(SugarSwarmBase):
             backend_args=backend_args,
         )
 
-    @docparams(doc_stack_rm)
+    @docparams(doc_stack_plus_options)
     def _cmd_rm(
         self,
         /,
@@ -843,7 +779,7 @@ class SugarSwarmNode(SugarSwarmBase):
     """
     SugarSwarmNode provides the docker node commands.
 
-    Commands: demote, inspect, ls, promote, ps, current node, rm, update,
+    Commands: demote, inspect, ls, promote, ps, current node, rm, update.
     """
 
     def _load_backend_args(self) -> None:
@@ -859,12 +795,12 @@ class SugarSwarmNode(SugarSwarmBase):
         node_names = [node for node in nodes.split(',') if node]
         if not node_names:
             SugarLogs.raise_error(
-                'Node name(s) must be provided for the "demote" command.',
+                MSG_ERROR_NODES_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
         options_args = self._get_list_args(options)
         self._call_command(
-            'demote', services=node_names, options_args=options_args
+            'demote', nodes=node_names, options_args=options_args
         )
 
     @docparams(doc_common_nodes)
@@ -877,12 +813,12 @@ class SugarSwarmNode(SugarSwarmBase):
         node_names = [node for node in nodes.split(',') if node]
         if not node_names:
             SugarLogs.raise_error(
-                'Node name(s) must be provided for the "inspect" command.',
+                MSG_ERROR_NODES_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
         options_args = self._get_list_args(options)
         self._call_command(
-            'inspect', services=node_names, options_args=options_args
+            'inspect', nodes=node_names, options_args=options_args
         )
 
     @docparams(doc_common_no_services)
@@ -904,12 +840,12 @@ class SugarSwarmNode(SugarSwarmBase):
         node_names = [node for node in nodes.split(',') if node]
         if not node_names:
             SugarLogs.raise_error(
-                'Node name(s) must be provided for the "promote" command.',
+                MSG_ERROR_NODES_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
         options_args = self._get_list_args(options)
         self._call_command(
-            'promote', services=node_names, options_args=options_args
+            'promote', nodes=node_names, options_args=options_args
         )
 
     @docparams(doc_common_nodes)
@@ -922,13 +858,11 @@ class SugarSwarmNode(SugarSwarmBase):
         node_names = [node for node in nodes.split(',') if node]
         if not node_names:
             SugarLogs.raise_error(
-                'Node name(s) must be provided for the "ps" command.',
+                MSG_ERROR_NODES_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
         options_args = self._get_list_args(options)
-        self._call_command(
-            'ps', services=node_names, options_args=options_args
-        )
+        self._call_command('ps', nodes=node_names, options_args=options_args)
 
     @docparams(doc_common_nodes)
     def _cmd_rm(
@@ -940,13 +874,11 @@ class SugarSwarmNode(SugarSwarmBase):
         node_names = [node for node in nodes.split(',') if node]
         if not node_names:
             SugarLogs.raise_error(
-                'Node name(s) must be provided for the "rm" command.',
+                MSG_ERROR_NODES_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
         options_args = self._get_list_args(options)
-        self._call_command(
-            'rm', services=node_names, options_args=options_args
-        )
+        self._call_command('rm', nodes=node_names, options_args=options_args)
 
     @docparams(doc_common_nodes)
     def _cmd_update(
@@ -958,10 +890,10 @@ class SugarSwarmNode(SugarSwarmBase):
         node_names = [node for node in nodes.split(',') if node]
         if not node_names:
             SugarLogs.raise_error(
-                'Node name(s) must be provided for the "update" command.',
+                MSG_ERROR_NODES_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
         options_args = self._get_list_args(options)
         self._call_command(
-            'update', services=node_names, options_args=options_args
+            'update', nodes=node_names, options_args=options_args
         )

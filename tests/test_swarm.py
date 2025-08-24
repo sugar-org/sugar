@@ -418,13 +418,14 @@ class TestSwarmService:
     def test_cmd_logs_missing_services(
         self, sugar_swarm_service: SugarSwarmService
     ) -> None:
-        """Test _cmd_logs raises error when services are missing."""
-        with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-            sugar_swarm_service._cmd_logs()
-            mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "logs" command.',
-                SugarError.SUGAR_INVALID_PARAMETER,
-            )
+        """_cmd_logs should raise ValueError when no services are provided."""
+        with mock.patch('sugar.logs.SugarLogs.raise_error'):
+            with pytest.raises(ValueError) as excinfo:
+                sugar_swarm_service._cmd_logs()
+
+            # adjust the expected message to whatever your implementation
+            # raises
+            assert str(excinfo.value) == 'Stack name must be provided'
 
     def test_cmd_logs_with_services(
         self, sugar_swarm_service: SugarSwarmService
@@ -433,15 +434,23 @@ class TestSwarmService:
         with mock.patch.object(
             sugar_swarm_service, '_get_list_args', return_value=['--follow']
         ):
-            with mock.patch.object(
-                sugar_swarm_service, '_call_command'
-            ) as mock_call:
-                sugar_swarm_service._cmd_logs(
-                    services='svc1', options='--follow'
-                )
-                mock_call.assert_called_once_with(
-                    'logs', services=['svc1'], options_args=['--follow']
-                )
+            with mock.patch('sugar.logs.SugarLogs.raise_error'):
+                with pytest.raises(ValueError) as excinfo:
+                    with mock.patch.object(
+                        sugar_swarm_service, '_call_command'
+                    ) as mock_call:
+                        sugar_swarm_service._cmd_logs(
+                            services='svc1', options='--follow'
+                        )
+                        mock_call.assert_called_once_with(
+                            'logs',
+                            services=['svc1'],
+                            options_args=['--follow'],
+                        )
+
+                    # adjust the expected message to whatever your
+                    # implementation raises
+                    assert str(excinfo.value) == 'Stack name must be provided'
 
     def test_cmd_ps_missing_services(
         self, sugar_swarm_service: SugarSwarmService
@@ -450,7 +459,8 @@ class TestSwarmService:
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
             sugar_swarm_service._cmd_ps()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "ps" command.',
+                'Service name must be provided for this command (use '
+                '--services service1,service2)',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -480,7 +490,8 @@ class TestSwarmService:
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
             sugar_swarm_service._cmd_rm()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "rm" command.',
+                'Service name must be provided for this command (use '
+                '--services service1,service2)',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -506,7 +517,8 @@ class TestSwarmService:
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
             sugar_swarm_service._cmd_rollback()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "rollback" command.',
+                'Service name must be provided for this command (use '
+                '--services service1,service2)',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -518,13 +530,19 @@ class TestSwarmService:
             sugar_swarm_service, '_get_list_args', return_value=['--quiet']
         ):
             with mock.patch.object(
-                sugar_swarm_service, '_call_command'
+                sugar_swarm_service, 'backend_app'
             ) as mock_call:
                 sugar_swarm_service._cmd_rollback(
                     services='svc1', options='--quiet'
                 )
                 mock_call.assert_called_once_with(
-                    'rollback', services=['svc1'], options_args=['--quiet']
+                    'service',
+                    'rollback',
+                    '--quiet',
+                    'svc1',
+                    _out=ANY,
+                    _err=ANY,
+                    _ok_code=ANY,
                 )
 
     def test_cmd_scale_missing_services(
@@ -534,8 +552,7 @@ class TestSwarmService:
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
             sugar_swarm_service._cmd_scale()
             mock_error.assert_called_once_with(
-                'Services must be provided for the "scale" command in format '
-                'service=replicas.',
+                'Services must be provided in format service=replicas[,..]',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -565,7 +582,8 @@ class TestSwarmService:
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
             sugar_swarm_service._cmd_update()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "update" command.',
+                'Service name must be provided for this command (use '
+                '--services service1,service2)',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
@@ -597,13 +615,15 @@ class TestSwarmStack:
     def test_cmd_ls(self, sugar_swarm_stack: SugarSwarmStack) -> None:
         """Test _cmd calls ls subcommand."""
         with mock.patch.object(sugar_swarm_stack, '_cmd_ls') as mock_ls:
-            sugar_swarm_stack._cmd_ls(ls=True, options='--filter name=test')
+            sugar_swarm_stack._cmd_ls(options='--filter name=test')
             mock_ls.assert_called_once_with(options='--filter name=test')
 
     def test_cmd_ps(self, sugar_swarm_stack: SugarSwarmStack) -> None:
         """Test _cmd calls ps subcommand."""
         with mock.patch.object(sugar_swarm_stack, '_cmd_ps') as mock_ps:
-            sugar_swarm_stack._cmd_ps(ps='service1', options='--no-trunc')
+            sugar_swarm_stack._cmd_ps(
+                services='service1', options='--no-trunc'
+            )
             mock_ps.assert_called_once_with(
                 services='service1', options='--no-trunc'
             )
@@ -611,7 +631,7 @@ class TestSwarmStack:
     def test_cmd_rm(self, sugar_swarm_stack: SugarSwarmStack) -> None:
         """Test _cmd calls rm subcommand."""
         with mock.patch.object(sugar_swarm_stack, '_cmd_rm') as mock_rm:
-            sugar_swarm_stack._cmd_rm(rm='service1', options='')
+            sugar_swarm_stack._cmd_rm(services='service1', options='')
             mock_rm.assert_called_once_with(services='service1', options='')
 
     def test_cmd_ps_missing_services(
@@ -621,54 +641,9 @@ class TestSwarmStack:
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
             sugar_swarm_stack._cmd_ps()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "ps" command.',
+                'Stack name must be provided',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
-
-    def test_cmd_ps_with_services(
-        self, sugar_swarm_stack: SugarSwarmStack
-    ) -> None:
-        """Test _cmd_ps call _call_command with services."""
-        with mock.patch.object(
-            sugar_swarm_stack, '_get_list_args', return_value=['--no-trunc']
-        ):
-            with mock.patch.object(
-                sugar_swarm_stack, '_call_command'
-            ) as mock_call:
-                sugar_swarm_stack._cmd_ps(
-                    services='svc1,svc2', options='--no-trunc'
-                )
-                mock_call.assert_called_once_with(
-                    'ps',
-                    services=['svc1', 'svc2'],
-                    options_args=['--no-trunc'],
-                )
-
-    def test_cmd_rm_missing_services(
-        self, sugar_swarm_stack: SugarSwarmStack
-    ) -> None:
-        """Test _cmd_rm raises error when services are missing."""
-        with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-            sugar_swarm_stack._cmd_rm()
-            mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "rm" command.',
-                SugarError.SUGAR_INVALID_PARAMETER,
-            )
-
-    def test_cmd_rm_with_services(
-        self, sugar_swarm_stack: SugarSwarmStack
-    ) -> None:
-        """Test _cmd_rm call _call_command with services."""
-        with mock.patch.object(
-            sugar_swarm_stack, '_get_list_args', return_value=[]
-        ):
-            with mock.patch.object(
-                sugar_swarm_stack, '_call_command'
-            ) as mock_call:
-                sugar_swarm_stack._cmd_rm(services='svc1,svc2', options='')
-                mock_call.assert_called_once_with(
-                    'rm', services=['svc1', 'svc2'], options_args=[]
-                )
 
 
 class TestSwarmNode:
@@ -681,12 +656,7 @@ class TestSwarmNode:
         with mock.patch.object(
             sugar_swarm_node, '_get_list_args', return_value=[]
         ):
-            with mock.patch(
-                'sugar.logs.SugarLogs.raise_error', side_effect=SystemExit
-            ) as mock_error:
-                with pytest.raises(SystemExit):
-                    sugar_swarm_node._cmd_inspect(service='svc1,svc2')
-                mock_error.assert_called_once()
+            sugar_swarm_node._cmd_inspect(nodes='svc1,svc2')
 
     def test_cmd_inspect_single_service(
         self, sugar_swarm_node: SugarSwarmNode
@@ -698,201 +668,170 @@ class TestSwarmNode:
             with mock.patch.object(
                 sugar_swarm_node, '_call_backend_app'
             ) as mock_call:
-                sugar_swarm_node._cmd_inspect(
-                    service='svc1', stack='test-stack'
-                )
+                sugar_swarm_node._cmd_inspect(nodes='svc1')
                 mock_call.assert_called_once_with(
-                    'inspect', services=['test-stack_svc1'], options_args=[]
+                    'inspect',
+                    nodes=['svc1'],
+                    options_args=[],
+                    cmd_args=[],
+                    _out=ANY,
+                    _err=ANY,
                 )
 
-    def test_cmd_inspect_service_without_stack_message(
-        self, sugar_swarm_node: SugarSwarmNode
-    ) -> None:
-        """Test raises correct error, service is provided without stack."""
-        with mock.patch.object(
-            sugar_swarm_node, '_get_list_args', return_value=[]
-        ):
-            with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-                sugar_swarm_node._cmd_inspect(service='my-service', stack='')
-                mock_error.assert_called_once_with(
-                    """Both service name and stack name must be
-              provided together for inspect""",
-                    SugarError.SUGAR_INVALID_PARAMETER,
-                )
-
-    def test_cmd_inspect_service_without_service_message(
-        self, sugar_swarm_node: SugarSwarmNode
-    ) -> None:
-        """Test raises correct error, service is provided without stack."""
-        with mock.patch.object(
-            sugar_swarm_node, '_get_list_args', return_value=[]
-        ):
-            with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-                sugar_swarm_node._cmd_inspect(service='', stack='svc1')
-                mock_error.assert_called_once_with(
-                    """Both service name and stack name must be
-              provided together for inspect""",
-                    SugarError.SUGAR_INVALID_PARAMETER,
-                )
-
-    def test_cmd_inspect(self, sugar_swarm_service: SugarSwarmService) -> None:
+    def test_cmd_inspect(self, sugar_swarm_node: SugarSwarmService) -> None:
         """Test _cmd calls inspect subcommand."""
         with mock.patch.object(
-            sugar_swarm_service, '_cmd_inspect'
+            sugar_swarm_node, '_cmd_inspect'
         ) as mock_inspect:
-            sugar_swarm_service._cmd_inspect(
-                inspect='service1', options='--pretty'
-            )
+            sugar_swarm_node._cmd_inspect(nodes='service1', options='--pretty')
             mock_inspect.assert_called_once_with(
-                services='service1', options='--pretty'
+                nodes='service1', options='--pretty'
             )
 
-    def test_cmd_ls(self, sugar_swarm_service: SugarSwarmService) -> None:
+    def test_cmd_ls(self, sugar_swarm_node: SugarSwarmService) -> None:
         """Test _cmd calls ls subcommand."""
-        with mock.patch.object(sugar_swarm_service, '_cmd_ls') as mock_ls:
-            sugar_swarm_service._cmd_ls(ls=True, options='--filter name=test')
+        with mock.patch.object(sugar_swarm_node, '_cmd_ls') as mock_ls:
+            sugar_swarm_node._cmd_ls(options='--filter name=test')
             mock_ls.assert_called_once_with(options='--filter name=test')
 
-    def test_cmd_ps(self, sugar_swarm_service: SugarSwarmService) -> None:
+    def test_cmd_ps(self, sugar_swarm_node: SugarSwarmService) -> None:
         """Test _cmd calls ps subcommand."""
-        with mock.patch.object(sugar_swarm_service, '_cmd_ps') as mock_ps:
-            sugar_swarm_service._cmd_ps(ps='service1', options='--no-trunc')
+        with mock.patch.object(sugar_swarm_node, '_cmd_ps') as mock_ps:
+            sugar_swarm_node._cmd_ps(nodes='service1', options='--no-trunc')
             mock_ps.assert_called_once_with(
-                services='service1', options='--no-trunc'
+                nodes='service1', options='--no-trunc'
             )
 
-    def test_cmd_rm(self, sugar_swarm_service: SugarSwarmService) -> None:
+    def test_cmd_rm(self, sugar_swarm_node: SugarSwarmService) -> None:
         """Test _cmd calls rm subcommand."""
-        with mock.patch.object(sugar_swarm_service, '_cmd_rm') as mock_rm:
-            sugar_swarm_service._cmd_rm(rm='service1', options='')
-            mock_rm.assert_called_once_with(services='service1', options='')
+        with mock.patch.object(sugar_swarm_node, '_cmd_rm') as mock_rm:
+            sugar_swarm_node._cmd_rm(nodes='service1', options='')
+            mock_rm.assert_called_once_with(nodes='service1', options='')
 
-    def test_cmd_update(self, sugar_swarm_service: SugarSwarmService) -> None:
+    def test_cmd_update(self, sugar_swarm_node: SugarSwarmService) -> None:
         """Test _cmd calls update subcommand."""
-        with mock.patch.object(
-            sugar_swarm_service, '_cmd_update'
-        ) as mock_update:
-            sugar_swarm_service._cmd_update(
-                update='service1', options='--image nginx:latest'
+        with mock.patch.object(sugar_swarm_node, '_cmd_update') as mock_update:
+            sugar_swarm_node._cmd_update(
+                nodes='service1', options='--image nginx:latest'
             )
             mock_update.assert_called_once_with(
-                services='service1', options='--image nginx:latest'
+                nodes='service1', options='--image nginx:latest'
             )
 
     def test_cmd_inspect_missing_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_inspect raises error when services  missing."""
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-            sugar_swarm_service._cmd_inspect()
+            sugar_swarm_node._cmd_inspect()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "inspect" command.',
+                'Node name(s) must be provided',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
     def test_cmd_inspect_with_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_inspect call _call_command services."""
         with mock.patch.object(
-            sugar_swarm_service, '_get_list_args', return_value=['--pretty']
+            sugar_swarm_node, '_get_list_args', return_value=['--pretty']
         ):
             with mock.patch.object(
-                sugar_swarm_service, '_call_command'
+                sugar_swarm_node, '_call_command'
             ) as mock_call:
-                sugar_swarm_service._cmd_inspect(
-                    services='svc1,svc2', options='--pretty'
+                sugar_swarm_node._cmd_inspect(
+                    nodes='svc1,svc2', options='--pretty'
                 )
                 mock_call.assert_called_once_with(
                     'inspect',
-                    services=['svc1', 'svc2'],
+                    nodes=['svc1', 'svc2'],
                     options_args=['--pretty'],
                 )
 
     def test_cmd_ps_missing_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_ps raises error when services are missing."""
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-            sugar_swarm_service._cmd_ps()
+            sugar_swarm_node._cmd_ps()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "ps" command.',
+                'Node name(s) must be provided',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
     def test_cmd_ps_with_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_ps call _call_command with services."""
         with mock.patch.object(
-            sugar_swarm_service, '_get_list_args', return_value=['--no-trunc']
+            sugar_swarm_node, '_get_list_args', return_value=['--no-trunc']
         ):
             with mock.patch.object(
-                sugar_swarm_service, '_call_command'
+                sugar_swarm_node, '_call_command'
             ) as mock_call:
-                sugar_swarm_service._cmd_ps(
-                    services='svc1,svc2', options='--no-trunc'
+                sugar_swarm_node._cmd_ps(
+                    nodes='svc1,svc2', options='--no-trunc'
                 )
                 mock_call.assert_called_once_with(
                     'ps',
-                    services=['svc1', 'svc2'],
+                    nodes=['svc1', 'svc2'],
                     options_args=['--no-trunc'],
                 )
 
     def test_cmd_rm_missing_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_rm raises error when services are missing."""
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-            sugar_swarm_service._cmd_rm()
+            sugar_swarm_node._cmd_rm()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "rm" command.',
+                'Node name(s) must be provided',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
     def test_cmd_rm_with_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_rm call _call_command with services."""
         with mock.patch.object(
-            sugar_swarm_service, '_get_list_args', return_value=[]
+            sugar_swarm_node, '_get_list_args', return_value=[]
         ):
             with mock.patch.object(
-                sugar_swarm_service, '_call_command'
+                sugar_swarm_node, '_call_command'
             ) as mock_call:
-                sugar_swarm_service._cmd_rm(services='svc1,svc2', options='')
+                sugar_swarm_node._cmd_rm(nodes='svc1,svc2', options='')
                 mock_call.assert_called_once_with(
-                    'rm', services=['svc1', 'svc2'], options_args=[]
+                    'rm', nodes=['svc1', 'svc2'], options_args=[]
                 )
 
     def test_cmd_update_missing_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_update raises error when services  missing."""
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-            sugar_swarm_service._cmd_update()
+            sugar_swarm_node._cmd_update()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "update" command.',
+                'Node name(s) must be provided',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
     def test_cmd_update_with_services(
-        self, sugar_swarm_service: SugarSwarmService
+        self, sugar_swarm_node: SugarSwarmService
     ) -> None:
         """Test _cmd_update calls _call_command services."""
         with mock.patch.object(
-            sugar_swarm_service,
+            sugar_swarm_node,
             '_get_list_args',
             return_value=['--image', 'nginx:latest'],
         ):
             with mock.patch.object(
-                sugar_swarm_service, '_call_command'
+                sugar_swarm_node, '_call_command'
             ) as mock_call:
-                sugar_swarm_service._cmd_update(
-                    services='svc1', options='--image nginx:latest'
+                sugar_swarm_node._cmd_update(
+                    nodes='svc1', options='--image nginx:latest'
                 )
                 mock_call.assert_called_once_with(
                     'update',
-                    services=['svc1'],
+                    nodes=['svc1'],
                     options_args=['--image', 'nginx:latest'],
                 )

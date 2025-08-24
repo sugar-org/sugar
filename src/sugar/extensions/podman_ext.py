@@ -142,6 +142,7 @@ class SugarPodmanComposeExt(SugarBase):
         self,
         action: str,
         services: list[str] = [],
+        nodes: list[str] = [],
         options_args: list[str] = [],
         cmd_args: list[str] = [],
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
@@ -154,6 +155,13 @@ class SugarPodmanComposeExt(SugarBase):
         instead of using the --env-file flag that's
         not supported by podman compose.
         """
+        # validation
+        if nodes:
+            SugarLogs.raise_error(
+                'The argument `nodes` is not supported yet '
+                'by the podman plugin.',
+                SugarError.SUGAR_INVALID_PARAMETER,
+            )
         # Execute pre-run hooks
         extension = camel_to_snake(
             self.__class__.__name__.replace('Sugar', '')
