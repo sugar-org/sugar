@@ -70,7 +70,7 @@ $ sugar swarm join --options "--token SWMTKN-1-... 192.168.1.1:2377"
 Deploy a stack from a sugar compose file:
 
 ```bash
-$ sugar swarm deploy --stack my_stack --file ./.sugar-prod.yml
+$ sugar swarm:stack deploy my_stack --file ./.sugar-prod.yml
 ```
 
 or
@@ -78,13 +78,13 @@ or
 if `.sugar.yml` file is present in the your current project root directory
 
 ```bash
-$ sugar swarm deploy --stack my_stack
+$ sugar swarm:stack deploy my_stack
 ```
 
 You can also use a `profile2` compose file:
 
 ```bash
-$ sugar swarm deploy --stack my_stack --profile profile2
+$ sugar swarm:stack deploy my_stack --profile profile2
 ```
 
 ### List Services in a Stack
@@ -92,7 +92,7 @@ $ sugar swarm deploy --stack my_stack --profile profile2
 List services in a specific stack:
 
 ```bash
-$ sugar swarm ls --stack my_stack
+$ sugar swarm:stack ls my_stack
 ```
 
 ### List Tasks in a Stack
@@ -100,7 +100,7 @@ $ sugar swarm ls --stack my_stack
 List the tasks in a stack:
 
 ```bash
-$ sugar swarm ps --stack my_stack
+$ sugar swarm:stack ps my_stack
 ```
 
 ### Remove a Stack
@@ -108,7 +108,7 @@ $ sugar swarm ps --stack my_stack
 Remove a deployed stack:
 
 ```bash
-$ sugar swarm rm --stack my_stack
+$ sugar swarm:stack rm my_stack
 ```
 
 ## Service Management
@@ -124,7 +124,7 @@ $ sugar swarm ls
 List all services in a specific stack in the swarm
 
 ```bash
-$ sugar swarm ls --stack my_stack
+$ sugar swarm:stack ls my_stack
 ```
 
 ### Inspect Services
@@ -132,7 +132,7 @@ $ sugar swarm ls --stack my_stack
 Get detailed information about a service:
 
 ```bash
-$ sugar  swarm inspect --service service1-1 --stack my_stack
+$ sugar swarm:service inspect --service service1-1 --stack my_stack
 ```
 
 ### View Service Logs
@@ -140,13 +140,13 @@ $ sugar  swarm inspect --service service1-1 --stack my_stack
 View logs for a specific service:
 
 ```bash
-$ sugar swarm logs --services service1-1 --stack my_stack
+$ sugar swarm:service logs --services service1-1 --stack my_stack
 ```
 
 With additional options:
 
 ```bash
-$ sugar swarm logs --services myservice --stack my_stack --follow --tail 100
+$ sugar swarm:service logs --services myservice --stack my_stack --follow --tail 100
 ```
 
 ### Scale Services
@@ -154,7 +154,7 @@ $ sugar swarm logs --services myservice --stack my_stack --follow --tail 100
 Scale services within a stack:
 
 ```bash
-$ sugar swarm scale --stack my_stack --replicas service1=3,service2=5
+$ sugar swarm:service scale --stack my_stack --replicas service1=3,service2=5
 ```
 
 ### Update Services (Currently in experemental stage)
@@ -324,13 +324,13 @@ Sugar provides a complete set of commands to manage swarm nodes through the
 ### List Nodes
 
 ```bash
-$ sugar swarm node ls
+$ sugar swarm:node ls
 ```
 
 ### Inspect Nodes
 
 ```bash
-$ sugar swarm node --inspect node-id1,node-id2
+$ sugar swarm:node inspect node-id1,node-id2
 ```
 
 ### Promote Nodes
@@ -338,7 +338,7 @@ $ sugar swarm node --inspect node-id1,node-id2
 Promote a worker node to manager:
 
 ```bash
-$ sugar swarm node --promote node-id
+$ sugar swarm:node promote node-id
 ```
 
 ### Demote Nodes
@@ -346,25 +346,25 @@ $ sugar swarm node --promote node-id
 Demote a manager node to worker:
 
 ```bash
-$ sugar swarm node --demote node-id
+$ sugar swarm:node demote node-id
 ```
 
 ### List Tasks on a Node
 
 ```bash
-$ sugar swarm node --ps node-id
+$ sugar swarm:node ps node-id
 ```
 
 ### Remove Nodes
 
 ```bash
-$ sugar swarm node --rm node-id
+$ sugar swarm:node rm node-id
 ```
 
 ### Update Nodes
 
 ```bash
-$ sugar swarm node --update node-id --options "--availability drain"
+$ sugar swarm:node update node-id --options "--availability drain"
 ```
 
 ## Command Options
@@ -394,19 +394,19 @@ Leverage Sugar profiles to manage different Swarm configurations:
 Production Profile:
 
 ```bash
-$ sugar --profile production swarm deploy --stack my_stack
+$ sugar --profile production swarm:stack deploy my_stack
 ```
 
 Development Profile:
 
 ```bash
-$ sugar --profile dev swarm deploy --stack my_stack
+$ sugar --profile dev swarm:stack deploy my_stack
 ```
 
 Testing Profile:
 
 ```bash
-$ sugar --profile test swarm deploy --stack my_stack
+$ sugar --profile test swarm:stack deploy my_stack
 ```
 
 This allows you to maintain different configurations for different environments
