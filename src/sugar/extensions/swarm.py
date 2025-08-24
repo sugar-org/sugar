@@ -61,6 +61,8 @@ doc_common_services = {
     **doc_options,
 }
 
+doc_common_services_stack = {**doc_common_services, **doc_stack}
+
 doc_stack_ls = {**doc_stack, **doc_options}
 doc_stack_rm = {**doc_stack, **doc_options}
 doc_stack_ps = {**doc_stack, **doc_options}
@@ -162,7 +164,6 @@ class SugarSwarmBase(SugarBase):
 
     def _load_backend_app(self) -> None:
         self.backend_app = sh.docker
-        self.backend_args = []
 
     def _load_backend_args(self) -> None:
         self.backend_args = []
@@ -274,19 +275,10 @@ class SugarSwarm(SugarSwarmBase):
     """
     SugarSwarm provides the docker swarm commands.
 
-    Commands:
-      - ca          Display and rotate the root CA
-      - init        Initialize a swarm
-      - join        Join a swarm as a node and/or manager
-      - join-token  Manage join tokens
-      - leave       Leave the swarm
-      - unlock      Unlock swarm
-      - unlock-key  Manage the unlock key
-      - update      Update the swarm
+    Commands: ca, init, join, join, leave, unlock, unlock, update.
     """
 
-    def _load_backend_app(self) -> None:
-        self.backend_app = sh.docker
+    def _load_backend_args(self) -> None:
         self.backend_args = ['swarm']
 
     @docparams(doc_common_no_services)
@@ -434,49 +426,11 @@ class SugarSwarmService(SugarSwarmBase):
     """
     SugarSwarmService provides the `docker service` commands.
 
-    Commands:
-      - create      Create a new service
-      - inspect     Display detailed information on one or more services
-      - logs        Fetch the logs of a service or task
-      - ls          List services
-      - ps          List the tasks of one or more services
-      - rm          Remove one or more services
-      - rollback    Revert changes to a service's configuration
-      - scale       Scale one or multiple replicated services
-      - update      Update a service
+    Commands: create, inspect, logs, ls, ps, rm, rollback, scale, update.
     """
 
-    def _load_backend_app(self) -> None:
-        self.backend_app = sh.docker
+    def _load_backend_args(self) -> None:
         self.backend_args = ['service']
-
-    # ---------- helpers used by rollback ----------
-    def _get_services_from_stack(self, stack: str) -> list[str]:
-        """Return all services in a stack (names like stack_service)."""
-        try:
-            output = io.StringIO()
-            self.backend_app(
-                'stack',
-                'services',
-                stack,
-                '--format',
-                '{{.Name}}',
-                _out=output,
-            )
-            services_output = output.getvalue()
-            services = [s for s in services_output.strip().split('\n') if s]
-            if not services:
-                SugarLogs.raise_error(
-                    f'No services found in stack {stack}',
-                    SugarError.SUGAR_INVALID_PARAMETER,
-                )
-            return services
-        except Exception as e:
-            SugarLogs.raise_error(
-                f'Failed to get services from stack {stack}: {e!s}',
-                SugarError.SH_ERROR_RETURN_CODE,
-            )
-            return []
 
     def _perform_service_rollback(
         self, service: str, options_args: list[str]
@@ -722,18 +676,10 @@ class SugarSwarmStack(SugarSwarmBase):
     """
     SugarSwarmStack provides the docker stack commands.
 
-    Commands:
-      - config      Outputs the final config file, after doing merges and
-                    interpolations
-      - deploy      Deploy a new stack or update an existing stack
-      - ls          List stacks
-      - ps          List the tasks in the stack
-      - rm          Remove one or more stacks
-      - services    List the services in the stack
+    Commands: config, deploy, ls, ps, rm, services.
     """
 
-    def _load_backend_app(self) -> None:
-        self.backend_app = sh.docker
+    def _load_backend_args(self) -> None:
         self.backend_args = ['stack']
 
     @docparams(
@@ -897,19 +843,10 @@ class SugarSwarmNode(SugarSwarmBase):
     """
     SugarSwarmNode provides the docker node commands.
 
-    Commands:
-      - demote      Demote one or more nodes from manager in the swarm
-      - inspect     Display detailed information on one or more nodes
-      - ls          List nodes in the swarm
-      - promote     Promote one or more nodes to manager in the swarm
-      - ps          List tasks running on one or more nodes, defaults to
-                    current node
-      - rm          Remove one or more nodes from
-      - update      Update a node
+    Commands: demote, inspect, ls, promote, ps, current node, rm, update,
     """
 
-    def _load_backend_app(self) -> None:
-        self.backend_app = sh.docker
+    def _load_backend_args(self) -> None:
         self.backend_args = ['node']
 
     @docparams(doc_common_nodes)

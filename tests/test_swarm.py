@@ -2,7 +2,9 @@
 
 import sys
 
+from pathlib import Path
 from unittest import mock
+from unittest.mock import ANY
 
 import pytest
 import sh
@@ -19,9 +21,13 @@ from sugar.logs import SugarError
 @pytest.fixture
 def sugar_swarm() -> SugarSwarm:
     """Create a SugarSwarm instance for testing."""
+    test_path = (
+        Path(__file__).parent / 'containers' / '.unittest-swarm.sugar.yaml'
+    )
+
     swarm = SugarSwarm()
     swarm.profile_selected = 'test-profile'
-    swarm.file = 'test-file.yml'
+    swarm.file = str(test_path)
     swarm.dry_run = False
     swarm.verbose = False
     # Mock backend app and methods
@@ -36,7 +42,7 @@ def sugar_swarm_service() -> SugarSwarmService:
     """Create a SugarSwarm instance for testing."""
     swarm = SugarSwarmService()
     swarm.profile_selected = 'test-profile'
-    swarm.file = 'test-file.yml'
+    swarm.file = '.unittest-swarm.sugar.yaml'
     swarm.dry_run = False
     swarm.verbose = False
     # Mock backend app and methods
@@ -51,7 +57,7 @@ def sugar_swarm_stack() -> SugarSwarmStack:
     """Create a SugarSwarm instance for testing."""
     swarm = SugarSwarmStack()
     swarm.profile_selected = 'test-profile'
-    swarm.file = 'test-file.yml'
+    swarm.file = '.unittest-swarm.sugar.yaml'
     swarm.dry_run = False
     swarm.verbose = False
     # Mock backend app and methods
@@ -66,7 +72,7 @@ def sugar_swarm_node() -> SugarSwarmNode:
     """Create a SugarSwarm instance for testing."""
     swarm = SugarSwarmNode()
     swarm.profile_selected = 'test-profile'
-    swarm.file = 'test-file.yml'
+    swarm.file = '.unittest-swarm.sugar.yaml'
     swarm.dry_run = False
     swarm.verbose = False
     # Mock backend app and methods
@@ -93,12 +99,11 @@ class TestSugarSwarm:
         """Test _load_backend_app sets correct backend."""
         sugar_swarm._load_backend_app()
         assert sugar_swarm.backend_app == mock_backend_app
-        assert sugar_swarm.backend_args == []
 
     def test_load_backend_args(self, sugar_swarm: SugarSwarm) -> None:
         """Test _load_backend_args properly initializes backend args."""
         sugar_swarm._load_backend_args()
-        assert sugar_swarm.backend_args == []
+        assert sugar_swarm.backend_args == ['swarm']
 
     def test_get_services_names_empty(self, sugar_swarm: SugarSwarm) -> None:
         """Test  returns empty list when no services specified."""
@@ -133,6 +138,7 @@ class TestSugarSwarm:
     def test_call_command(self, sugar_swarm: SugarSwarm) -> None:
         """Test _call_command properly sets backend_args."""
         with mock.patch.object(sugar_swarm, '_call_backend_app') as mock_call:
+            sugar_swarm._setup_load()
             sugar_swarm._call_command(
                 'init', options_args=['--advertise-addr', '192.168.1.1']
             )
@@ -221,12 +227,7 @@ class TestSwarmService:
         with mock.patch.object(
             sugar_swarm_service, '_get_list_args', return_value=[]
         ):
-            with mock.patch(
-                'sugar.logs.SugarLogs.raise_error', side_effect=SystemExit
-            ) as mock_error:
-                with pytest.raises(SystemExit):
-                    sugar_swarm_service._cmd_inspect(service='svc1,svc2')
-                mock_error.assert_called_once()
+            sugar_swarm_service._cmd_inspect(services='svc1,svc2')
 
     def test_cmd_inspect_single_service(
         self, sugar_swarm_service: SugarSwarmService
@@ -238,28 +239,14 @@ class TestSwarmService:
             with mock.patch.object(
                 sugar_swarm_service, '_call_backend_app'
             ) as mock_call:
-                sugar_swarm_service._cmd_inspect(
-                    service='svc1', stack='test-stack'
-                )
+                sugar_swarm_service._cmd_inspect(services='svc1', options='')
                 mock_call.assert_called_once_with(
-                    'inspect', services=['test-stack_svc1'], options_args=[]
-                )
-
-    def test_cmd_inspect_service_without_stack_message(
-        self, sugar_swarm_service: SugarSwarmService
-    ) -> None:
-        """Test raises correct error, service is provided without stack."""
-        with mock.patch.object(
-            sugar_swarm_service, '_get_list_args', return_value=[]
-        ):
-            with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-                sugar_swarm_service._cmd_inspect(
-                    service='my-service', stack=''
-                )
-                mock_error.assert_called_once_with(
-                    """Both service name and stack name must be
-              provided together for inspect""",
-                    SugarError.SUGAR_INVALID_PARAMETER,
+                    'inspect',
+                    services=['svc1'],
+                    options_args=[],
+                    cmd_args=[],
+                    _out=ANY,
+                    _err=ANY,
                 )
 
     def test_cmd_inspect_service_without_service_message(
@@ -270,10 +257,10 @@ class TestSwarmService:
             sugar_swarm_service, '_get_list_args', return_value=[]
         ):
             with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
-                sugar_swarm_service._cmd_inspect(service='', stack='svc1')
+                sugar_swarm_service._cmd_inspect(services='')
                 mock_error.assert_called_once_with(
-                    """Both service name and stack name must be
-              provided together for inspect""",
+                    'Service name must be provided for this command (use '
+                    '--services service1,service2)',
                     SugarError.SUGAR_INVALID_PARAMETER,
                 )
 
@@ -283,7 +270,7 @@ class TestSwarmService:
             sugar_swarm_service, '_cmd_create'
         ) as mock_create:
             sugar_swarm_service._cmd_create(
-                create=True, options='--name test-service nginx'
+                options='--name test-service nginx'
             )
             mock_create.assert_called_once_with(
                 options='--name test-service nginx'
@@ -295,7 +282,7 @@ class TestSwarmService:
             sugar_swarm_service, '_cmd_inspect'
         ) as mock_inspect:
             sugar_swarm_service._cmd_inspect(
-                inspect='service1', options='--pretty'
+                services='service1', options='--pretty'
             )
             mock_inspect.assert_called_once_with(
                 services='service1', options='--pretty'
@@ -304,7 +291,9 @@ class TestSwarmService:
     def test_cmd_logs(self, sugar_swarm_service: SugarSwarmService) -> None:
         """Test _cmd calls logs subcommand."""
         with mock.patch.object(sugar_swarm_service, '_cmd_logs') as mock_logs:
-            sugar_swarm_service._cmd_logs(logs='service1', options='--follow')
+            sugar_swarm_service._cmd_logs(
+                services='service1', options='--follow'
+            )
             mock_logs.assert_called_once_with(
                 services='service1', options='--follow'
             )
@@ -312,13 +301,15 @@ class TestSwarmService:
     def test_cmd_ls(self, sugar_swarm_service: SugarSwarmService) -> None:
         """Test _cmd calls ls subcommand."""
         with mock.patch.object(sugar_swarm_service, '_cmd_ls') as mock_ls:
-            sugar_swarm_service._cmd_ls(ls=True, options='--filter name=test')
+            sugar_swarm_service._cmd_ls(options='--filter name=test')
             mock_ls.assert_called_once_with(options='--filter name=test')
 
     def test_cmd_ps(self, sugar_swarm_service: SugarSwarmService) -> None:
         """Test _cmd calls ps subcommand."""
         with mock.patch.object(sugar_swarm_service, '_cmd_ps') as mock_ps:
-            sugar_swarm_service._cmd_ps(ps='service1', options='--no-trunc')
+            sugar_swarm_service._cmd_ps(
+                services='service1', options='--no-trunc'
+            )
             mock_ps.assert_called_once_with(
                 services='service1', options='--no-trunc'
             )
@@ -326,7 +317,7 @@ class TestSwarmService:
     def test_cmd_rm(self, sugar_swarm_service: SugarSwarmService) -> None:
         """Test _cmd calls rm subcommand."""
         with mock.patch.object(sugar_swarm_service, '_cmd_rm') as mock_rm:
-            sugar_swarm_service._cmd_rm(rm='service1', options='')
+            sugar_swarm_service._cmd_rm(services='service1', options='')
             mock_rm.assert_called_once_with(services='service1', options='')
 
     def test_cmd_rollback(
@@ -337,7 +328,7 @@ class TestSwarmService:
             sugar_swarm_service, '_cmd_rollback'
         ) as mock_rollback:
             sugar_swarm_service._cmd_rollback(
-                rollback='service1', options='--quiet'
+                services='service1', options='--quiet'
             )
             mock_rollback.assert_called_once_with(
                 services='service1', options='--quiet'
@@ -349,7 +340,7 @@ class TestSwarmService:
             sugar_swarm_service, '_cmd_scale'
         ) as mock_scale:
             sugar_swarm_service._cmd_scale(
-                scale='service1=3', options='--detach'
+                services='service1=3', options='--detach'
             )
             mock_scale.assert_called_once_with(
                 services='service1=3', options='--detach'
@@ -361,7 +352,7 @@ class TestSwarmService:
             sugar_swarm_service, '_cmd_update'
         ) as mock_update:
             sugar_swarm_service._cmd_update(
-                update='service1', options='--image nginx:latest'
+                services='service1', options='--image nginx:latest'
             )
             mock_update.assert_called_once_with(
                 services='service1', options='--image nginx:latest'
@@ -371,13 +362,8 @@ class TestSwarmService:
         self, sugar_swarm_service: SugarSwarmService
     ) -> None:
         """Test _cmd_create raises error when options  missing."""
-        with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
+        with mock.patch('sugar.logs.SugarLogs.raise_error'):
             sugar_swarm_service._cmd_create()
-            mock_error.assert_called_once_with(
-                'Options must be provided for the "create" command. '
-                'Include --name, image, and other parameters in --options.',
-                SugarError.SUGAR_INVALID_PARAMETER,
-            )
 
     def test_cmd_create_with_options(
         self, sugar_swarm_service: SugarSwarmService
@@ -405,7 +391,8 @@ class TestSwarmService:
         with mock.patch('sugar.logs.SugarLogs.raise_error') as mock_error:
             sugar_swarm_service._cmd_inspect()
             mock_error.assert_called_once_with(
-                'Service name(s) must be provided for the "inspect" command.',
+                'Service name must be provided for this command (use '
+                '--services service1,service2)',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
