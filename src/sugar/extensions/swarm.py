@@ -293,6 +293,15 @@ class SugarSwarm(SugarSwarmBase):
         self.backend_args = ['swarm']
 
     @docparams(doc_common_no_services)
+    def _cmd_ca(
+        self,
+        options: str = '',
+    ) -> None:
+        """Display and rotate the root CA."""
+        options_args = self._get_list_args(options)
+        self._call_command('join', options_args=options_args)
+
+    @docparams(doc_common_no_services)
     def _cmd_init(
         self,
         options: str = '',
@@ -313,6 +322,42 @@ class SugarSwarm(SugarSwarmBase):
         """Join a swarm as a node and/or manager."""
         options_args = self._get_list_args(options)
         self._call_command('join', options_args=options_args)
+
+    @docparams(doc_common_no_services)
+    def _cmd_join_token(
+        self,
+        options: str = '',
+    ) -> None:
+        """Manage join tokens."""
+        options_args = self._get_list_args(options)
+        self._call_command('join-token', options_args=options_args)
+
+    @docparams(doc_common_no_services)
+    def _cmd_leave(
+        self,
+        options: str = '',
+    ) -> None:
+        """Leave the swarm."""
+        options_args = self._get_list_args(options)
+        self._call_command('leave', options_args=options_args)
+
+    @docparams(doc_common_no_services)
+    def _cmd_unlock(
+        self,
+        options: str = '',
+    ) -> None:
+        """Unlock swarm."""
+        options_args = self._get_list_args(options)
+        self._call_command('unlock', options_args=options_args)
+
+    @docparams(doc_common_no_services)
+    def _cmd_unlock_key(
+        self,
+        options: str = '',
+    ) -> None:
+        """Manage the unlock key."""
+        options_args = self._get_list_args(options)
+        self._call_command('unlock-key', options_args=options_args)
 
     @docparams({**doc_common_services, **doc_update_options})
     def _cmd_update(

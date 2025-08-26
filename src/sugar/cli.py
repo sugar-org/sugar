@@ -65,6 +65,7 @@ app = typer.Typer(
     ),
     short_help="Sugar is a tool that help you \
         to organize containers' stack",
+    no_args_is_help=True,
 )
 
 
@@ -242,7 +243,9 @@ def create_args_string(args: dict[str, dict[str, str]]) -> str:
         arg_type = normalize_string_type(spec.get('type', 'str'))
         help_text = spec.get('help', '')
         default_value = 'None'
-        is_positional_only = spec.get('positional_only', False)
+        is_positional_only = (
+            spec.get('positional_only', 'true').lower() == 'true'
+        )
 
         if not spec.get('required', False) and not spec.get(
             'interactive', False
@@ -251,9 +254,9 @@ def create_args_string(args: dict[str, dict[str, str]]) -> str:
             default_value = get_default_value_str(arg_type, default_value)
 
         selected_template = (
-            arg_template_flag
-            if is_positional_only == 'False'
-            else arg_template_positional
+            arg_template_positional
+            if is_positional_only
+            else arg_template_flag
         )
 
         arg_str = selected_template.format(
@@ -634,7 +637,12 @@ def _setup_typer_app(commands: dict[str, list[MetaDocs]]) -> None:
 
     # Add each profile to the main app
     for ext_name, typer_profile in typer_profiles.items():
-        app.add_typer(typer_profile, name=ext_name, rich_help_panel='COMMAND')
+        app.add_typer(
+            typer_profile,
+            name=ext_name,
+            rich_help_panel='COMMAND',
+            no_args_is_help=True,
+        )
 
 
 def run_app() -> None:
@@ -666,16 +674,14 @@ def run_app() -> None:
     _setup_typer_app(commands)
 
     try:
-        if len(sys.argv) == 1:
-            app(['--help'])
-        else:
-            app()
+        app()
     except SystemExit as e:
         # code 2 means command not found
         if e.code == EXIT_CODE_CONSTANT:
-            app(['--help'])
-        else:
-            raise e
+            app(['--help'], standalone_mode=False)
+            typer.Exit(code=1)
+            os._exit(1)
+        raise e
 
 
 if __name__ == '__main__':
