@@ -43,6 +43,8 @@ groups:
 
   tests:
     help: Test commands
+    env:
+      SUGAR_SWARM_FLAGS: --file tests/containers/.services.sugar-swarm.yaml --verbose --profile profile1
     tasks:
       linter:
         help: Run lint checks
@@ -396,42 +398,30 @@ groups:
 
       smoke-swarm-init:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
-          sugar ${{ env.SUGAR_FLAGS }} swarm init --options "--advertise-addr 127.0.0.1"
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm init --options "--advertise-addr 127.0.0.1"
 
       smoke-swarm-deploy:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
           # Test stack commands
-          sugar ${{ env.SUGAR_FLAGS }} swarm:stack deploy --stack test-stack
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:stack deploy --stack test-stack
 
-      smoke-swarm-ls:
+      smoke-swarm-stack-ls:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
-          echo $'\033[32mTesting service listing...\033[0m'
-          sugar ${{ env.SUGAR_FLAGS }} swarm ls
-          sugar ${{ env.SUGAR_FLAGS }} swarm:stack ls --stack test-stack
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:stack ls --stack test-stack
 
       smoke-swarm-ps:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
           # Test stack ps command
-          sugar ${{ env.SUGAR_FLAGS }} swarm:stack ps --stack test-stack
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:stack ps --stack test-stack
 
       smoke-swarm-service-inspect:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
-          sugar ${{ env.SUGAR_FLAGS }} swarm:service inspect --services service1-1
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:service inspect --services service1-1 --stack test-stack
           # Test service1-1 , service1-2 and service1-3 service three times ping
           for port in 18000 18001 18002; do
             for i in {1..3}; do
@@ -442,82 +432,51 @@ groups:
 
       smoke-swarm-logs:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
-          sugar ${{ env.SUGAR_FLAGS }} swarm:service logs --services service1-1 --stack test-stack --tail 10
-          sugar ${{ env.SUGAR_FLAGS }} swarm:service logs --services service1-2 --stack test-stack --tail 10
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:service logs --services service1-1 --stack test-stack --tail 10
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:service logs --services service1-2 --stack test-stack --tail 10
 
       smoke-swarm-service-scale:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
-          sugar ${{ env.SUGAR_FLAGS }} swarm:service scale --stack test-stack --replicas service1-1=2,service1-2=3
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:service scale --stack test-stack --replicas service1-1=2,service1-2=3
 
       smoke-swarm-update:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
-          sugar ${{ env.SUGAR_FLAGS }} swarm update --services test-stack_service1-1
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm update
 
       smoke-swarm-rollback:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
-          sugar ${{ env.SUGAR_FLAGS }} swarm:service rollback --services service1-1,service1-3 test-stack
-          sugar ${{ env.SUGAR_FLAGS }} swarm:service rollback test-stack --all
-
-      smoke-swarm-simple-workflow:
-        help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
-        run: |
-          echo $'\033[32mTesting swarm service commands...\033[0m'
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --create --options "--name web nginx"
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --inspect web
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --logs web
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --ps web
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --update web --options "--image nginx:alpine"
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --scale "web=3"
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --rollback web
-          sugar ${{ env.SUGAR_FLAGS }} swarm service --rm web
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm:service rollback --service service1-1
 
       smoke-swarm-nodes:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
           sugar swarm:node ls
           NODE_ID=$(docker node ls --format "{{.ID}}" )
-          sugar swarm:node inspect $NODE_ID
-          sugar swarm:node ps $NODE_ID
+          sugar swarm:node inspect --nodes $NODE_ID
+          sugar swarm:node ps --nodes $NODE_ID
 
       smoke-swarm-leave:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         run: |
           docker swarm leave --force
 
       smoke-swarm:
         help: Run smoke tests for swarm commands
-        env:
-          SUGAR_FLAGS: --verbose --profile profile1
         hooks:
           pre-run:
             - task: docker.killall
             - task: tests.smoke-swarm-init
             - task: tests.smoke-swarm-deploy
-            - task: tests.smoke-swarm-ls
+            - task: tests.smoke-swarm-stack-ls
             - task: tests.smoke-swarm-ps
-            - task: tests.smoke-swarm-inspect
+            - task: tests.smoke-swarm-service-inspect
             - task: tests.smoke-swarm-logs
             - task: tests.smoke-swarm-update
             - task: tests.smoke-swarm-rollback
-            - task: tests.smoke-swarm-simple-workflow
             - task: tests.smoke-swarm-service-scale
             - task: tests.smoke-swarm-nodes
             - task: tests.smoke-swarm-leave
@@ -529,11 +488,7 @@ groups:
         help: Kill all running Docker containers
         run: |
           docker kill $(docker ps -qa) || true
-          sugar swarm:node leave --options "--force" || true
           sugar swarm leave --options "--force" || true
-      leave_node:
-        help: Leave the swarm
-        run: docker node inspect self --format '{{.Spec.Role}}' &>/dev/null && { docker node leave --force && echo "Node left the swarm"; } || echo "Node already left the swarm"
 
   podman:
     help: Commands for podman

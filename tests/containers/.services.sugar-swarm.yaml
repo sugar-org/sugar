@@ -1,0 +1,17 @@
+backend: compose
+env-file: ../../.env
+defaults:
+  profile: "profile1"
+  project-name: "sugar-${{ env.SUGAR_PROJECT_NAME }}"
+profiles:
+  profile1:
+    project-name: project1
+    config-path: tests/containers/profile1/compose-swarm.yaml
+    services:
+      default:
+        - service1-1
+        - service1-3
+      available:
+        - name: service1-1
+        - name: service1-2
+        - name: service1-3
