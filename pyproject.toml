@@ -63,6 +63,10 @@ mkdocs-macros-plugin = ">=0.7.0,<1"
 mkdocs-material = ">=9.1.15"
 mkdocstrings = {version=">=0.19.0", extras=["python"]}
 makim = ">=1.19.0"
+# optional deps
+rich = ">=10.11.0"
+textual = ">=0.48"
+plotille = ">=5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
