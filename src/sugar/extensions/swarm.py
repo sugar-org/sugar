@@ -23,6 +23,7 @@ from sugar.docs import docparams
 from sugar.extensions.base import SugarBase
 from sugar.logs import SugarError, SugarLogs
 from sugar.utils import prepend_stack_name
+from sugar.validation import require_not_blank
 
 MSG_ERROR_STACK_NAME = 'Stack name must be provided'
 MSG_ERROR_NODES_NAME = 'Node name(s) must be provided'
@@ -132,7 +133,6 @@ doc_scale_options = {
     'detach': (
         'Exit immediately instead of waiting for the service to converge'
     ),
-    'stack': 'Name of the stack to scale',
     'replicas': (
         'Number of replicas per service '
         '(comma-separated list of service=replicas pairs)'
@@ -178,6 +178,7 @@ class SugarSwarmBase(SugarBase):
             return []
 
         _arg_services = kwargs.get('services', '')
+        _arg_stack = kwargs.get('stack', '')
 
         # For swarm, we don't use the 'all' flag, only explicit services
         if not _arg_services:
@@ -189,6 +190,10 @@ class SugarSwarmBase(SugarBase):
 
         # Simply split the comma-separated service names
         services_list: list[str] = _arg_services.split(',')
+
+        if _arg_stack:
+            services_list = [f'{_arg_stack}_{name}' for name in services_list]
+
         return services_list
 
     def _call_stack_command(
@@ -293,6 +298,15 @@ class SugarSwarm(SugarSwarmBase):
         self.backend_args = ['swarm']
 
     @docparams(doc_common_no_services)
+    def _cmd_ca(
+        self,
+        options: str = '',
+    ) -> None:
+        """Display and rotate the root CA."""
+        options_args = self._get_list_args(options)
+        self._call_command('join', options_args=options_args)
+
+    @docparams(doc_common_no_services)
     def _cmd_init(
         self,
         options: str = '',
@@ -314,11 +328,45 @@ class SugarSwarm(SugarSwarmBase):
         options_args = self._get_list_args(options)
         self._call_command('join', options_args=options_args)
 
-    @docparams({**doc_common_services, **doc_update_options})
+    @docparams(doc_common_no_services)
+    def _cmd_join_token(
+        self,
+        options: str = '',
+    ) -> None:
+        """Manage join tokens."""
+        options_args = self._get_list_args(options)
+        self._call_command('join-token', options_args=options_args)
+
+    @docparams(doc_common_no_services)
+    def _cmd_leave(
+        self,
+        options: str = '',
+    ) -> None:
+        """Leave the swarm."""
+        options_args = self._get_list_args(options)
+        self._call_command('leave', options_args=options_args)
+
+    @docparams(doc_common_no_services)
+    def _cmd_unlock(
+        self,
+        options: str = '',
+    ) -> None:
+        """Unlock swarm."""
+        options_args = self._get_list_args(options)
+        self._call_command('unlock', options_args=options_args)
+
+    @docparams(doc_common_no_services)
+    def _cmd_unlock_key(
+        self,
+        options: str = '',
+    ) -> None:
+        """Manage the unlock key."""
+        options_args = self._get_list_args(options)
+        self._call_command('unlock-key', options_args=options_args)
+
+    @docparams({**doc_update_options})
     def _cmd_update(
         self,
-        services: str = '',
-        all: bool = False,
         detach: bool = False,
         quiet: bool = False,
         image: str = '',
@@ -330,7 +378,7 @@ class SugarSwarm(SugarSwarmBase):
         options: str = '',
     ) -> None:
         """Update services (docker service update)."""
-        names = self._get_services_names(services=services, all=all)
+        names: list[str] = []
         opts = self._get_list_args(options)
 
         if detach:
@@ -417,15 +465,22 @@ class SugarSwarmService(SugarSwarmBase):
             'create', services=[], options_args=self._get_list_args(options)
         )
 
-    @docparams(doc_common_services)
+    @require_not_blank('stack')
+    @docparams({**doc_common_services_stack})
     def _cmd_inspect(
-        self, services: str = '', all: bool = False, options: str = ''
+        self,
+        stack: str = '',
+        services: str = '',
+        all: bool = False,
+        options: str = '',
     ) -> None:
         """Inspect one or more services (docker service inspect)."""
-        names = self._get_services_names(services=services, all=all)
+        services_names = self._get_services_names(
+            services=services, all=all, stack=stack
+        )
         self._call_command(
             'inspect',
-            services=names,
+            services=services_names,
             options_args=self._get_list_args(options),
         )
 
@@ -498,11 +553,10 @@ class SugarSwarmService(SugarSwarmBase):
             'rm', services=names, options_args=self._get_list_args(options)
         )
 
-    @docparams({**doc_common_services, **doc_rollback_options, **doc_stack})
+    @docparams({**doc_common_service, **doc_rollback_options, **doc_stack})
     def _cmd_rollback(
         self,
-        services: str = '',
-        all: bool = False,
+        service: str = '',
         stack: str = '',
         detach: bool = False,
         quiet: bool = False,
@@ -520,18 +574,11 @@ class SugarSwarmService(SugarSwarmBase):
             opts.append('--quiet')
 
         # Determine targets
-        if stack:
-            targets = (
-                self._get_services_from_stack(stack)
-                if (all or not services)
-                else [
-                    (svc if svc.startswith(f'{stack}_') else f'{stack}_{svc}')
-                    for svc in services.split(',')
-                    if svc
-                ]
-            )
-        else:
-            targets = self._get_services_names(services=services, all=all)
+        targets = self._get_services_names(
+            services=service,
+            all=False,
+            stack=stack,
+        )
 
         if not targets:
             SugarLogs.print_warning('No services specified for rollback')
@@ -545,21 +592,44 @@ class SugarSwarmService(SugarSwarmBase):
                 bad += 1
         print(f'Rollback complete: {ok} succeeded, {bad} failed')
 
-    @docparams(doc_common_services)
+    @require_not_blank(name='replicas')
+    @require_not_blank(name='stack')
+    @docparams({**doc_scale_options, **doc_stack})
     def _cmd_scale(
-        self, services: str = '', all: bool = False, options: str = ''
+        self,
+        replicas: str = '',
+        stack: str = '',
+        detach: bool = False,
+        options: str = '',
     ) -> None:
         """
         Scale services (docker service scale).
 
-        Use --services "svc1=3,svc2=5".
+        Use --replicas "svc1=3,svc2=5".
         """
-        if not services:
+        if not replicas:
             SugarLogs.raise_error(
                 'Services must be provided in format service=replicas[,..]',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
-        pairs = [p for p in services.split(',') if p]
+
+        opts = self._get_list_args(options)
+        if detach:
+            opts.append('--detach')
+
+        _args_extra = {'all': False, 'stack': stack}
+
+        # alias
+        fn = self._get_services_names
+
+        pairs: list[str] = []
+
+        for pair in replicas.split(','):
+            if not pair:
+                continue
+
+            service, replica = pair.split('=')
+            pairs.append(f'{fn(services=service, **_args_extra)[0]}={replica}')
         self._call_command(
             'scale', services=pairs, options_args=self._get_list_args(options)
         )

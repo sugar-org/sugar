@@ -128,7 +128,6 @@ class SugarPodmanComposeExt(SugarBase):
                 'received.',
                 SugarError.SUGAR_INVALID_CONFIGURATION,
             )
-        print(config_path)
         # Use -f instead of --file for podman compose
         for p in config_path:
             self.backend_args.extend(['-f', p])
