@@ -211,7 +211,7 @@
 
 ### Features
 
-* Improve the usage of parameters --cmd and --options (formerly --extras)  ([#68](https://github.com/osl-incubator/sugar/issues/68)) ([cebdfd8](https://github.com/osl-incubator/sugar/commit/cebdfd808449a14982ca974b24fc36d0fed5eeb7))
+* Improve the usage of parameters --cmd and --  (formerly --extras)  ([#68](https://github.com/osl-incubator/sugar/issues/68)) ([cebdfd8](https://github.com/osl-incubator/sugar/commit/cebdfd808449a14982ca974b24fc36d0fed5eeb7))
 
 ## [1.4.4](https://github.com/osl-incubator/sugar/compare/1.4.3...1.4.4) (2023-04-05)
 

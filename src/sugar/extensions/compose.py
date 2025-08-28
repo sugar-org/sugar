@@ -17,9 +17,7 @@ doc_services = {
 }
 doc_all_services = {'all': 'Use all services for the command.'}
 doc_options = {
-    'options': (
-        'Specify the options for the backend command. E.g.: `--options -d`.'
-    )
+    'options': ('Specify the options for the backend command. E.g.: `--  -d`.')
 }
 doc_cmd = {
     'cmd': (

@@ -126,10 +126,10 @@ sugar podman-ext build --services app,database
 sugar podman-ext start
 
 # Start all services in detached mode
-sugar podman-ext start --all --options -d
+sugar podman-ext start --all --  -d
 
 # Start specific services in detached mode
-sugar podman-ext start --services app,database --options -d
+sugar podman-ext start --services app,database --  -d
 ```
 
 ### Executing Commands
@@ -168,7 +168,7 @@ Podman Compose, there are some differences to be aware of:
 
 !!! note Note
 
-    1. There is no such flag `-d` present in `--options` for
+    1. There is no such flag `-d` present in `-- ` for
        `sugar podman-ext start`.
     2. Experimental commands like `attach`, `cp`, `ls`, `scale`, and `watch` may have
        different behavior between Podman versions. These commands are not supported currently in Sugar
