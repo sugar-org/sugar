@@ -58,7 +58,7 @@ groups:
           params:
             help: Extra parameters for pytest
             type: string
-            default: "-vv"
+            default: "-vvv"
         run: pytest -s ${{ args.params }} tests
 
       smoke-1:

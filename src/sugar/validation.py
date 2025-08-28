@@ -10,7 +10,7 @@ import functools
 import inspect
 
 from collections.abc import Collection
-from typing import Any, Callable, Iterable, NoReturn, TypeVar, cast
+from typing import Any, Callable, Iterable, TypeVar
 
 from typing_extensions import ParamSpec
 
@@ -169,7 +169,7 @@ def require_not_blank(
     )
 
 
-def _emit_error(message: str, error_code: Any | None) -> NoReturn:
+def _emit_error(message: str, error_code: SugarError | None) -> None:
     """
     Emit an error via SugarLogs if available; otherwise raise ``ValueError``.
 
@@ -179,25 +179,7 @@ def _emit_error(message: str, error_code: Any | None) -> NoReturn:
         Error message to report.
     error_code
         Optional code to pass to ``SugarLogs.raise_error``.
-
-    Raises
-    ------
-    ValueError
-        Always raised if no logger raises.
     """
-    try:
-        # Ensure we pass a SugarError (not Optional[Any]) to the logger.
-        if error_code is None:
-            default = getattr(SugarError, 'SUGAR_INVALID_PARAMETER', None)
-            if default is None:
-                raise ValueError(message)
-            code_to_use: SugarError = cast('SugarError', default)
-        else:
-            code_to_use = cast('SugarError', error_code)
-
-        SugarLogs.raise_error(message, code_to_use)
-    except Exception:
-        raise ValueError(message) from None
-
-    # If the logger returns without raising, still fail explicitly.
-    raise ValueError(message)
+    SugarLogs.raise_error(
+        message, error_code or SugarError.SUGAR_INVALID_PARAMETER
+    )
