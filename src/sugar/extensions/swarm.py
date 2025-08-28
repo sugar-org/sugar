@@ -378,7 +378,7 @@ class SugarSwarm(SugarSwarmBase):
         options: str = '',
     ) -> None:
         """Update services (docker service update)."""
-        names = []
+        names: list[str] = []
         opts = self._get_list_args(options)
 
         if detach:
