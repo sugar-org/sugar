@@ -76,11 +76,11 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} compose pull --all
           sugar ${{ vars.SUGAR_FLAGS }} compose pull
           sugar ${{ vars.SUGAR_FLAGS }} compose pull --services service1-1
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --all --options -d
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --all --options -d
-          sugar ${{ vars.SUGAR_FLAGS }} compose exec --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --all --  -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --all --  -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose exec --service service1-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} compose stop --all
-          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service1-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} compose down
 
       smoke-podman-1:
@@ -98,11 +98,11 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull --all
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull --services service1-1
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --all --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --all --  -d
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext restart --all
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext exec --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext exec --service service1-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext stop --all
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service1-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext down --all
 
       smoke-2:
@@ -118,7 +118,7 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} compose build --services service2-1
           sugar ${{ vars.SUGAR_FLAGS }} compose pull --all
           sugar ${{ vars.SUGAR_FLAGS }} compose stop --all
-          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service2-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service2-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} compose down
 
       smoke-env-files:
@@ -130,11 +130,11 @@ groups:
           SUGAR_FLAGS: --verbose --file tests/containers/.multiple-env.sugar.yaml --profile profile1
         run: |
           sugar ${{ vars.SUGAR_FLAGS }} compose build
-          sugar ${{ vars.SUGAR_FLAGS }} compose up --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose up --  -d
 
           for service in service1-1 service1-3; do
-            sugar ${{ vars.SUGAR_FLAGS }} compose exec --service $service --options -T --cmd env | grep "ENV_VAR_1=value1"
-            sugar ${{ vars.SUGAR_FLAGS }} compose exec --service $service --options -T --cmd env | grep "ENV_VAR_2=value2"
+            sugar ${{ vars.SUGAR_FLAGS }} compose exec --service $service --cmd env --  -T | grep "ENV_VAR_1=value1"
+            sugar ${{ vars.SUGAR_FLAGS }} compose exec --service $service --cmd env --  -T | grep "ENV_VAR_2=value2"
           done
 
           sugar ${{ vars.SUGAR_FLAGS }} compose down
@@ -152,7 +152,7 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext build --services service2-1
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull --all
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext stop --all
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service2-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service2-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext down
 
       smoke-services:
@@ -185,11 +185,11 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} compose pull --all
           sugar ${{ vars.SUGAR_FLAGS }} compose pull
           sugar ${{ vars.SUGAR_FLAGS }} compose pull --services service1-1,service2-1
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --all --options -d
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --all --options -d
-          sugar ${{ vars.SUGAR_FLAGS }} compose exec --service service2-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --all --  -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --all --  -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose exec --service service2-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} compose stop --all
-          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service2-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service2-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} compose down
 
       smoke-podman-mix:
@@ -206,11 +206,11 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull --all
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull --services service1-1,service2-1
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --all --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --all --  -d
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext restart --all
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext exec --service service2-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext exec --service service2-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext stop --all
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service2-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service2-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext down
 
       smoke-main:
@@ -225,9 +225,9 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} compose build
           sugar ${{ vars.SUGAR_FLAGS }} compose config
           sugar ${{ vars.SUGAR_FLAGS }} compose create
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --options -d
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --options -d
-          sugar ${{ vars.SUGAR_FLAGS }} compose exec --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --  -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --  -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose exec --service service1-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} compose images
           sugar ${{ vars.SUGAR_FLAGS }} compose logs
           # port is not complete supported
@@ -235,16 +235,16 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} compose ps
           sugar ${{ vars.SUGAR_FLAGS }} compose pull
           sugar ${{ vars.SUGAR_FLAGS }} compose push
-          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} compose run --service service1-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} compose top
-          sugar ${{ vars.SUGAR_FLAGS }} compose up --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose up --  -d
           sugar ${{ vars.SUGAR_FLAGS }} compose version
           # port is not complete supported
           export SUGAR_PROJECT_NAME="test-`python -c 'from uuid import uuid4; print(uuid4().hex[:7])'`"
           echo $SUGAR_PROJECT_NAME
           sugar ${{ vars.SUGAR_FLAGS }} compose build
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --options -d
-          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext start --  -d
+          sugar ${{ vars.SUGAR_FLAGS }} compose-ext restart --  -d
           # TODO: it seems that the SUGAR_PROJECT_NAME is not used properly from this block
           # docker ps|grep $SUGAR_PROJECT_NAME
           sugar ${{ vars.SUGAR_FLAGS }} compose-ext stop
@@ -261,9 +261,9 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext build
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext config
           # sugar ${{ vars.SUGAR_FLAGS }} podman-ext create
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --  -d
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext restart
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext exec --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext exec --service service1-1 --cmd env --  -T
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext images --all
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext logs
           # port is not complete supported
@@ -271,15 +271,15 @@ groups:
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext ps
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext pull
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext push
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service1-1 --options -T --cmd env
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext run --service service1-1 --cmd env --  -T
           # sugar ${{ vars.SUGAR_FLAGS }} podman-ext top
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext up --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext up --  -d
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext version
           # port is not complete supported
           export SUGAR_PROJECT_NAME="test-`python -c 'from uuid import uuid4; print(uuid4().hex[:7])'`"
           echo $SUGAR_PROJECT_NAME
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext build
-          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --options -d
+          sugar ${{ vars.SUGAR_FLAGS }} podman-ext start --  -d
           sugar ${{ vars.SUGAR_FLAGS }} podman-ext restart
           # TODO: it seems that the SUGAR_PROJECT_NAME is not used properly from this block
           # docker ps|grep $SUGAR_PROJECT_NAME
@@ -291,12 +291,12 @@ groups:
           pre-run:
             - task: docker.killall
         run: |
-          sugar --verbose --profile profile-defaults compose-ext restart --options -d
+          sugar --verbose --profile profile-defaults compose-ext restart --  -d
           sugar --verbose --profile profile1 compose pause
           sugar --verbose --profile profile1 compose unpause
           sugar --verbose --profile profile1 compose kill
           sugar --verbose --profile profile1 compose stop
-          sugar --verbose --profile profile1 compose rm --options --force
+          sugar --verbose --profile profile1 compose rm --  --force
           sugar --verbose --profile profile1 compose down
 
       smoke-podman-final:
@@ -399,7 +399,7 @@ groups:
       smoke-swarm-init:
         help: Run smoke tests for swarm commands
         run: |
-          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm init --options "--advertise-addr 127.0.0.1"
+          sugar ${{ env.SUGAR_SWARM_FLAGS }} swarm init --  --advertise-addr 127.0.0.1
 
       smoke-swarm-deploy:
         help: Run smoke tests for swarm commands
@@ -488,7 +488,7 @@ groups:
         help: Kill all running Docker containers
         run: |
           docker kill $(docker ps -qa) || true
-          sugar swarm leave --options "--force" || true
+          sugar swarm leave --  --force || true
 
   podman:
     help: Commands for podman

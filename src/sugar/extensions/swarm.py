@@ -34,7 +34,7 @@ doc_profile = {
 doc_options = {
     'options': (
         'Specify the options for the backend command. '
-        'E.g.: `--options --advertise-addr 192.168.1.1`.'
+        'E.g.: `--  --advertise-addr 192.168.1.1`.'
     )
 }
 doc_service = {'service': 'Set the service for the swarm command.'}
@@ -113,7 +113,7 @@ doc_services_logs_options = {
     'timestamps': 'Show timestamps',
 }
 doc_service_actions = {
-    'create': 'Create a new service (use --options for all parameters)',
+    'create': 'Create a new service (use --  for all parameters)',
     'inspect': 'Display detailed information on one or more services',
     'logs': 'Fetch the logs of a service or task',
     'ls': 'List services',
@@ -458,7 +458,7 @@ class SugarSwarmService(SugarSwarmBase):
         if not options:
             SugarLogs.raise_error(
                 'Options must be provided for "create". '
-                'Include --name, image, etc. inside --options.',
+                'Include --name, image, etc. inside -- .',
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
         self._call_command(

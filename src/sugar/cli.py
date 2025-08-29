@@ -346,35 +346,66 @@ def create_dynamic_command(
 
     args_str = create_args_string(args)
     args_param_list: list[str] = []
-
-    for arg, arg_details in args.items():
+    for arg, _spec in args.items():
         arg_clean = arg.replace('-', '_')
         args_param_list.append(f'{arg}={arg_clean}')
-
     args_param_str = ','.join(args_param_list)
 
+    # IMPORTANT: allow extra args so we can capture tokens after `--`
     decorator = typer_profile.command(
         name,
         help=fn_help,
+        context_settings={
+            'allow_extra_args': True,
+            'ignore_unknown_options': True,
+        },
     )
 
-    function_code = f'def dynamic_command({args_str}):\n'
+    # we need ctx to access ctx.args (the tail after `--`)
+    needs_options_glue = (
+        'options' in args
+    )  # only glue tail if command has `options`
 
-    # handle interactive prompts
-    for arg, arg_details in args.items():
-        arg_clean = arg.replace('-', '_')
+    # build function signature
+    params_sig = 'ctx: typer.Context'
+    if args_str:
+        params_sig += f', {args_str}'
 
-    function_code += f'    sugar = sugar_exts.get("{ext_name}")\n'
-    function_code += f'    sugar._cmd_{name}({args_param_str})\n'
+    # build function body
+    if needs_options_glue:
+        glue = (
+            '    # If the user typed a literal `--`, '
+            'treat the tail as backend options\n'
+            '    # Click removes the `--` token, so we detect it via sys.argv '
+            'and read ctx.args\n'
+            "    extra_tail = list(ctx.args) if '--' in sys.argv else []\n"
+            '    if extra_tail:\n'
+            '        # merge tail into the `options` string (works with your '
+            'existing _get_list_args)\n'
+            "        options = (options or '').strip()\n"
+            "        tail_str = ' '.join(extra_tail)\n"
+            "        options = f'{options} {tail_str}'.strip() if options "
+            'else tail_str\n'
+        )
+        call_line = f'    sugar._cmd_{name}({args_param_str})\n'
+    else:
+        glue = (
+            '    # Command has no `options` parameter; ignore tail to avoid '
+            'swallowing typos\n'
+            '    _ = ctx.args  # still available if you later want to use it\n'
+        )
+        call_line = f'    sugar._cmd_{name}({args_param_str})\n'
+
+    function_code = (
+        f'def dynamic_command({params_sig}):\n'
+        f"    sugar = sugar_exts.get('{ext_name}')\n"
+        f'{glue}'
+        f'{call_line}'
+    )
 
     local_vars: dict[str, Any] = {}
     exec(function_code, globals(), local_vars)
-    dynamic_command = decorator(local_vars['dynamic_command'])
-
-    # Apply Click options to the Typer command
-    if 'args' in args:
-        options_data = cast(Dict[str, Dict[str, Any]], args.get('args', {}))
-        dynamic_command = apply_click_options(dynamic_command, options_data)
+    decorator(local_vars['dynamic_command'])
 
 
 # function to create a callback for each Typer profile
@@ -389,62 +420,6 @@ def subcommand_callback() -> Callable[..., None]:
             raise typer.Exit()
 
     return callback
-
-
-def extract_options_and_cmd_args() -> tuple[list[str], list[str]]:
-    """Extract arg `options` and `cmd` from the CLI calling."""
-    args = list(sys.argv)
-    total_args = len(args)
-
-    if '--options' in args:
-        options_sep_idx = args.index('--options')
-    else:
-        options_sep_idx = None
-
-    if '--cmd' in args:
-        cmd_sep_idx = args.index('--cmd')
-    else:
-        cmd_sep_idx = None
-
-    if options_sep_idx is None and cmd_sep_idx is None:
-        return [], []
-
-    # check if --options or --cmd are the last ones in the command line
-    first_sep_idx = min(
-        [(options_sep_idx or total_args), (cmd_sep_idx or total_args)]
-    )
-    for sugar_arg in [
-        '--verbose',
-        '--version',
-        '--profile',
-        '--services',
-        '--service',
-        '--all',
-        '--file',
-    ]:
-        if sugar_arg not in args:
-            continue
-
-        if first_sep_idx < args.index(sugar_arg):
-            print(
-                '[EE] The parameters --options/--cmd should be the '
-                'last ones in the command line.'
-            )
-            os._exit(1)
-
-    for ind in range(first_sep_idx, total_args):
-        sys.argv.pop(first_sep_idx)
-
-    options_sep_idx = options_sep_idx or total_args
-    cmd_sep_idx = cmd_sep_idx or total_args
-
-    if options_sep_idx < cmd_sep_idx:
-        options_args = args[options_sep_idx + 1 : cmd_sep_idx]
-        cmd_args = args[cmd_sep_idx + 1 :]
-    else:
-        cmd_args = args[cmd_sep_idx + 1 : options_sep_idx]
-        options_args = args[options_sep_idx + 1 :]
-    return options_args, cmd_args
 
 
 def extract_root_config(

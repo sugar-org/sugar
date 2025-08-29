@@ -30,9 +30,7 @@ doc_services = {
 }
 doc_all_services = {'all': 'Use all services for the command.'}
 doc_options = {
-    'options': (
-        'Specify the options for the backend command. E.g.: `--options -d`.'
-    )
+    'options': ('Specify the options for the backend command. E.g.: `--  -d`.')
 }
 doc_cmd = {
     'cmd': (
@@ -463,7 +461,7 @@ class SugarPodmanComposeExt(SugarBase):
         Monitor podman events.
 
         Shows events from containers matching the specified services.
-        Use --filter to filter output (e.g. --options "--filter event=create").
+        Use --filter to filter output (e.g. --  --filter event=create).
         """
         if not services and not all:
             SugarLogs.raise_error(

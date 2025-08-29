@@ -52,7 +52,7 @@ profiles:
 Initialize a new Docker Swarm on the current engine:
 
 ```bash
-$ sugar swarm init --options "--advertise-addr 192.168.1.1"
+$ sugar swarm init --  --advertise-addr 192.168.1.1
 ```
 
 ### Join a Swarm
@@ -60,7 +60,7 @@ $ sugar swarm init --options "--advertise-addr 192.168.1.1"
 Join an existing swarm as a worker or manager node:
 
 ```bash
-$ sugar swarm join --options "--token SWMTKN-1-... 192.168.1.1:2377"
+$ sugar swarm join --  --token SWMTKN-1-... 192.168.1.1:2377
 ```
 
 ## Stack Management
@@ -195,13 +195,13 @@ offers more granular control over individual Docker Swarm services:
 Create a new service in the swarm:
 
 ```bash
-$ sugar swarm service --create --options "--name web nginx"
+$ sugar swarm service --create --  --name web nginx
 ```
 
 Create a service with additional parameters:
 
 ```bash
-$ sugar swarm service --create --options "--name api --replicas 3 --publish 8080:80 my-api:latest"
+$ sugar swarm service --create --  --name api --replicas 3 --publish 8080:80 my-api:latest
 ```
 
 ### Inspect a Service
@@ -229,7 +229,7 @@ $ sugar swarm service --logs web
 View logs with additional options:
 
 ```bash
-$ sugar swarm service --logs web --options "--follow --tail 100"
+$ sugar swarm service --logs web --  --follow --tail 100
 ```
 
 ### List Services
@@ -243,7 +243,7 @@ $ sugar swarm service --ls
 List services with custom formatting:
 
 ```bash
-$ sugar swarm service --ls --options "--format 'table {{.Name}}\t{{.Mode}}\t{{.Replicas}}'"
+$ sugar swarm service --ls --  --format 'table {{.Name}}\t{{.Mode}}\t{{.Replicas}}'
 ```
 
 ### List Service Tasks
@@ -279,13 +279,13 @@ $ sugar swarm service --scale "web=3,api=5,worker=2"
 Update a service configuration:
 
 ```bash
-$ sugar swarm service --update web --options "--image nginx:alpine"
+$ sugar swarm service --update web --  --image nginx:alpine
 ```
 
 Update with multiple parameters:
 
 ```bash
-$ sugar swarm service --update api --options "--image my-api:v2 --replicas 5"
+$ sugar swarm service --update api --  --image my-api:v2 --replicas 5
 ```
 
 ### Rollback a Service
@@ -364,7 +364,7 @@ $ sugar swarm:node rm node-id
 ### Update Nodes
 
 ```bash
-$ sugar swarm:node update node-id --options "--availability drain"
+$ sugar swarm:node update node-id --  --availability drain
 ```
 
 ## Command Options
@@ -372,7 +372,7 @@ $ sugar swarm:node update node-id --options "--availability drain"
 Most swarm commands accept the following common options:
 
 - `--profile`: Specify the profile name to use
-- `--options`: Pass additional options to the underlying Docker command
+- `-- `: Pass additional options to the underlying Docker command
 - `--services`: Specify a comma-separated list of services
 - `--all`: Apply the command to all services
 - `--stack`: Specify a stack name for stack operations
