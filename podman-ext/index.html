@@ -823,10 +823,10 @@ sugar<span class="w"> </span>podman-ext<span class="w"> </span>build<span class=
 sugar<span class="w"> </span>podman-ext<span class="w"> </span>start
 
 <span class="c1"># Start all services in detached mode</span>
-sugar<span class="w"> </span>podman-ext<span class="w"> </span>start<span class="w"> </span>--all<span class="w"> </span>--options<span class="w"> </span>-d
+sugar<span class="w"> </span>podman-ext<span class="w"> </span>start<span class="w"> </span>--all<span class="w"> </span>--<span class="w">  </span>-d
 
 <span class="c1"># Start specific services in detached mode</span>
-sugar<span class="w"> </span>podman-ext<span class="w"> </span>start<span class="w"> </span>--services<span class="w"> </span>app,database<span class="w"> </span>--options<span class="w"> </span>-d
+sugar<span class="w"> </span>podman-ext<span class="w"> </span>start<span class="w"> </span>--services<span class="w"> </span>app,database<span class="w"> </span>--<span class="w">  </span>-d
 </code></pre></div>
 <h3 id="executing-commands">Executing Commands</h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Execute a command in a running service container</span>
@@ -857,7 +857,7 @@ Podman Compose, there are some differences to be aware of:</p>
 <div class="admonition note note">
 <p class="admonition-title">Note</p>
 <ol>
-<li>There is no such flag <code>-d</code> present in <code>--options</code> for
+<li>There is no such flag <code>-d</code> present in <code>--</code> for
    <code>sugar podman-ext start</code>.</li>
 <li>Experimental commands like <code>attach</code>, <code>cp</code>, <code>ls</code>, <code>scale</code>, and <code>watch</code> may have
    different behavior between Podman versions. These commands are not supported currently in Sugar</li>
