@@ -1,6 +1,14 @@
 # Release Notes
 ---
 
+# [1.19.0](https://github.com/sugar-org/sugar/compare/1.18.0...1.19.0) (2025-08-29)
+
+
+### Features
+
+* Add missing swarm commands ([#192](https://github.com/sugar-org/sugar/issues/192)) ([ed7f52f](https://github.com/sugar-org/sugar/commit/ed7f52f57cfae7a5e409c2b985d2d1ce98878947))
+* Replace --options by <SPACE>--<SPACE> ([#193](https://github.com/sugar-org/sugar/issues/193)) ([dd1ddac](https://github.com/sugar-org/sugar/commit/dd1ddac11cbc8617f0ac78195af31fc88ad288e1))
+
 # [1.18.0](https://github.com/sugar-org/sugar/compare/1.17.0...1.18.0) (2025-08-20)
 
 
