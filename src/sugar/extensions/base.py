@@ -100,6 +100,7 @@ class SugarBase(ABC):
         self._load_defaults()
         self._load_root_services()
 
+        self._load_profile()
         self._load_backend()
 
         self._verify_config()
@@ -256,23 +257,11 @@ class SugarBase(ABC):
     def _filter_service_profile(self) -> None:
         profiles = self.config['profiles']
 
-        if not self.profile_selected:
-            default_profile = self.defaults.get('profile')
-            if not default_profile:
-                SugarLogs.raise_error(
-                    'The service profile parameter or default '
-                    "profile configuration weren't defined.",
-                    SugarError.SUGAR_INVALID_PARAMETER,
-                )
-            selected_profile_name = default_profile
-        else:
-            selected_profile_name = self.profile_selected
-
         # Verify if project-name is not null
         default_project_name = self.defaults.get('project-name', '') or ''
 
         for profile_name, profile_data in profiles.items():
-            if profile_name == selected_profile_name:
+            if profile_name == self.profile_selected:
                 if default_project_name and 'project-name' not in profile_data:
                     # just use default value if "project-name" is not set
                     profile_data['project-name'] = default_project_name
@@ -290,7 +279,7 @@ class SugarBase(ABC):
                 return
 
         SugarLogs.raise_error(
-            f'The given profile service "{selected_profile_name}" '
+            f'The given profile service "{self.profile_selected}" '
             'was not found in the configuration file.',
             SugarError.SUGAR_MISSING_PARAMETER,
         )
@@ -360,6 +349,18 @@ class SugarBase(ABC):
                     SugarError.SUGAR_INVALID_CONFIGURATION,
                 )
             self.env.update(dotenv.dotenv_values(env_file_path))  # type: ignore
+
+    def _load_profile(self) -> None:
+        if not self.profile_selected:
+            default_profile = self.defaults.get('profile', '')
+            if not default_profile:
+                SugarLogs.raise_error(
+                    'The service profile parameter or default '
+                    "profile configuration weren't defined.",
+                    SugarError.SUGAR_INVALID_PARAMETER,
+                )
+            self.profile_selected = default_profile
+        self._filter_service_profile()
 
     def _get_list_args(self, args: str) -> list[str]:
         """Return a list with the name of the service if any."""

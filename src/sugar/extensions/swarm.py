@@ -20,7 +20,7 @@ from typing import Any, Union
 import sh
 
 from sugar.docs import docparams
-from sugar.extensions.base import SugarBase
+from sugar.extensions.compose import SugarComposeBase
 from sugar.logs import SugarError, SugarLogs
 from sugar.utils import prepend_stack_name
 from sugar.validation import require_not_blank
@@ -152,7 +152,7 @@ doc_update_options = {
 }
 
 
-class SugarSwarmBase(SugarBase):
+class SugarSwarmBase(SugarComposeBase):
     """SugarSwarmBase provides base functionalities."""
 
     def _load_backend(self) -> None:
@@ -198,11 +198,9 @@ class SugarSwarmBase(SugarBase):
 
     def _call_stack_command(
         self,
-        stack_name: str,
-        compose_file: str = '',
+        stack_name: str = 'default',
         options_args: list[str] = [],
         backend_args: list[str] = [],
-        compose_file_required: bool = False,
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
         _err: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stderr,
     ) -> None:
@@ -211,8 +209,9 @@ class SugarSwarmBase(SugarBase):
 
         # Check if compose file should be included
         self.backend_args = backend_args.copy()
-        if compose_file and compose_file_required:
-            self.backend_args.extend([compose_file])
+
+        for config_file in self._get_config_files_path():
+            self.backend_args.extend(['-c', config_file])
 
         # Call with the stack name as the main command/argument
         self._call_backend_app(
@@ -469,7 +468,7 @@ class SugarSwarmService(SugarSwarmBase):
     @docparams({**doc_common_services_stack})
     def _cmd_inspect(
         self,
-        stack: str = '',
+        stack: str = 'default',
         services: str = '',
         all: bool = False,
         options: str = '',
@@ -489,7 +488,7 @@ class SugarSwarmService(SugarSwarmBase):
         self,
         services: str = '',
         all: bool = False,
-        stack: str = '',
+        stack: str = 'default',
         details: bool = False,
         follow: bool = False,
         no_resolve: bool = False,
@@ -557,7 +556,7 @@ class SugarSwarmService(SugarSwarmBase):
     def _cmd_rollback(
         self,
         service: str = '',
-        stack: str = '',
+        stack: str = 'default',
         detach: bool = False,
         quiet: bool = False,
         options: str = '',
@@ -598,7 +597,7 @@ class SugarSwarmService(SugarSwarmBase):
     def _cmd_scale(
         self,
         replicas: str = '',
-        stack: str = '',
+        stack: str = 'default',
         detach: bool = False,
         options: str = '',
     ) -> None:
@@ -690,18 +689,14 @@ class SugarSwarmStack(SugarSwarmBase):
 
     @docparams(
         {
-            **doc_profile,
             **doc_stack,
-            **doc_compose_file,
             **doc_options,
         }
     )
     def _cmd_deploy(
         self,
         /,
-        stack: str = '',
-        file: str = '',
-        profile: str = '',
+        stack: str = 'default',
         options: str = '',
     ) -> None:
         """Deploy a new stack from a compose file.
@@ -716,53 +711,14 @@ class SugarSwarmStack(SugarSwarmBase):
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
-        compose_file = file
-        # If no file is provided, get it from the profile configuration
-        if not compose_file:
-            # Make sure configuration is loaded
-            if not hasattr(self, 'config') or not self.config:
-                # Use the load method from the parent class,
-                # which is the correct method
-                super().load(
-                    self.file,
-                    self.profile_selected,
-                    self.dry_run,
-                    self.verbose,
-                )
-
-            # Get the profile configuration
-            profile_name = (
-                profile or self.profile_selected or 'profile-defaults'
-            )
-            if profile_name and 'profiles' in self.config:
-                profile_config = self.config['profiles'].get(profile_name, {})
-                config_path = profile_config.get('config-path', '')
-
-                # config_path can be a string or a list
-                if isinstance(config_path, list) and config_path:
-                    compose_file = config_path[
-                        0
-                    ]  # Use the first file if multiple
-                else:
-                    compose_file = config_path
-
-        if not compose_file:
-            SugarLogs.raise_error(
-                """Compose file not specified and
-                not found in profile configuration""",
-                SugarError.SUGAR_INVALID_PARAMETER,
-            )
-
         # Parse options
         options_args = self._get_list_args(options)
 
         # Use the helper method instead of direct call
         self._call_stack_command(
             stack_name=stack,
-            compose_file=compose_file,
             options_args=options_args,
-            compose_file_required=True,
-            backend_args=['stack', 'deploy', '-c'],
+            backend_args=['stack', 'deploy'],
         )
 
     @docparams(
@@ -774,7 +730,7 @@ class SugarSwarmStack(SugarSwarmBase):
     def _cmd_ls(
         self,
         /,
-        stack: str = '',
+        stack: str = 'default',
         quiet: bool = False,
         options: str = '',
     ) -> None:
@@ -793,7 +749,6 @@ class SugarSwarmStack(SugarSwarmBase):
         self._call_stack_command(
             stack_name=stack,
             options_args=options_args,
-            compose_file_required=False,
             backend_args=backend_args,
         )
 
@@ -806,7 +761,7 @@ class SugarSwarmStack(SugarSwarmBase):
     def _cmd_ps(
         self,
         /,
-        stack: str = '',
+        stack: str = 'default',
         quiet: bool = False,
         options: str = '',
     ) -> None:
@@ -825,7 +780,6 @@ class SugarSwarmStack(SugarSwarmBase):
         self._call_stack_command(
             stack_name=stack,
             options_args=options_args,
-            compose_file_required=False,
             backend_args=backend_args,
         )
 
@@ -833,14 +787,13 @@ class SugarSwarmStack(SugarSwarmBase):
     def _cmd_rm(
         self,
         /,
-        stack: str = '',
+        stack: str = 'default',
         options: str = '',
     ) -> None:
         """Remove the stack from the swarm."""
         self._call_stack_command(
             stack_name=stack,
             options_args=self._get_list_args(options),
-            compose_file_required=False,
             backend_args=['stack', 'rm'],
         )
 

@@ -33,7 +33,10 @@ def get_absolute_path(relative_path: str) -> str:
 
 # prepend stack name to the services list and stack is should be provided
 # if not throw error
-def prepend_stack_name(stack_name: str, services: list[str]) -> list[str]:
+def prepend_stack_name(
+    stack_name: str = 'default',
+    services: list[str] = [],
+) -> list[str]:
     """
     Prepend stack name to the services list.
 
