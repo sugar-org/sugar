@@ -239,10 +239,14 @@ class SugarSwarmBase(SugarComposeBase):
             '_out': _out,
             '_err': _err,
         }
+
         if services:
             kwargs['services'] = services
         elif nodes:
             kwargs['nodes'] = nodes
+        else:
+            # Important for tests: explicitly pass services=[]
+            kwargs['services'] = []
 
         self._call_backend_app(subcommand, **kwargs)
 
