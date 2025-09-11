@@ -51,8 +51,26 @@ doc_common_services_no_options = {
 }
 
 
-class SugarCompose(SugarBase):
-    """SugarCompose provides the docker compose commands."""
+class SugarComposeBase(SugarBase):
+    """SugarComposeBase provides common functionalities."""
+
+    def _get_config_files_path(self) -> list[str]:
+        config_path: list[str] = []
+
+        backend_path_arg = self.service_profile['config-path']
+        if isinstance(backend_path_arg, str):
+            config_path.append(backend_path_arg)
+        elif isinstance(backend_path_arg, list):
+            config_path.extend(backend_path_arg)
+        else:
+            SugarLogs.raise_error(
+                'The attribute config-path` just supports the data '
+                f'types `string` or `list`, {type(backend_path_arg)} '
+                'received.',
+                SugarError.SUGAR_INVALID_CONFIGURATION,
+            )
+
+        return config_path
 
     def _load_backend(self) -> None:
         backend_cmd = self.config.get('backend', '')
@@ -89,19 +107,7 @@ class SugarCompose(SugarBase):
         for env_file in env_files:
             self.backend_args.extend(['--env-file', env_file])
 
-        config_path: list[str] = []
-        backend_path_arg = self.service_profile['config-path']
-        if isinstance(backend_path_arg, str):
-            config_path.append(backend_path_arg)
-        elif isinstance(backend_path_arg, list):
-            config_path.extend(backend_path_arg)
-        else:
-            SugarLogs.raise_error(
-                'The attribute config-path` just supports the data '
-                f'types `string` or `list`, {type(backend_path_arg)} '
-                'received.',
-                SugarError.SUGAR_INVALID_CONFIGURATION,
-            )
+        config_path = self._get_config_files_path()
 
         for p in config_path:
             self.backend_args.extend(['--file', p])
@@ -110,6 +116,10 @@ class SugarCompose(SugarBase):
             self.backend_args.extend(
                 ['--project-name', self.service_profile['project-name']]
             )
+
+
+class SugarCompose(SugarComposeBase):
+    """SugarCompose provides the docker compose commands."""
 
     @docparams(doc_common_service)
     def _cmd_attach(
