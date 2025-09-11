@@ -125,6 +125,7 @@ class SugarBase(ABC):
         cmd_args: list[str] = [],
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
         _err: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stderr,
+        stdin_data: Union[str, bytes, io.StringIO, None] = None,
     ) -> None:
         # validation
         if services and nodes:
@@ -142,7 +143,7 @@ class SugarBase(ABC):
         self._execute_hooks('pre-run', extension, action)
 
         sh_extras = {
-            '_in': sys.stdin,
+            '_in': stdin_data if stdin_data is not None else sys.stdin,
             '_out': _out,
             '_err': _err,
             '_no_err': True,
@@ -171,10 +172,7 @@ class SugarBase(ABC):
             )
             return
 
-        p = self.backend_app(
-            *positional_parameters,
-            **sh_extras,
-        )
+        p = self.backend_app(*positional_parameters, **sh_extras)
 
         try:
             p.wait()
