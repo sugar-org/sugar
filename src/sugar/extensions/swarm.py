@@ -198,9 +198,10 @@ class SugarSwarmBase(SugarComposeBase):
 
     def _call_stack_command(
         self,
-        stack_name: str = 'default',
+        stack_name: str = '',
         options_args: list[str] = [],
         backend_args: list[str] = [],
+        include_compose_files: bool = False,
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
         _err: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stderr,
     ) -> None:
@@ -210,8 +211,9 @@ class SugarSwarmBase(SugarComposeBase):
         # Check if compose file should be included
         self.backend_args = backend_args.copy()
 
-        for config_file in self._get_config_files_path():
-            self.backend_args.extend(['-c', config_file])
+        if include_compose_files:
+            for config_file in self._get_config_files_path():
+                self.backend_args.extend(['-c', config_file])
 
         # Call with the stack name as the main command/argument
         self._call_backend_app(
@@ -468,7 +470,7 @@ class SugarSwarmService(SugarSwarmBase):
     @docparams({**doc_common_services_stack})
     def _cmd_inspect(
         self,
-        stack: str = 'default',
+        stack: str = '',
         services: str = '',
         all: bool = False,
         options: str = '',
@@ -488,7 +490,7 @@ class SugarSwarmService(SugarSwarmBase):
         self,
         services: str = '',
         all: bool = False,
-        stack: str = 'default',
+        stack: str = '',
         details: bool = False,
         follow: bool = False,
         no_resolve: bool = False,
@@ -556,7 +558,7 @@ class SugarSwarmService(SugarSwarmBase):
     def _cmd_rollback(
         self,
         service: str = '',
-        stack: str = 'default',
+        stack: str = '',
         detach: bool = False,
         quiet: bool = False,
         options: str = '',
@@ -597,7 +599,7 @@ class SugarSwarmService(SugarSwarmBase):
     def _cmd_scale(
         self,
         replicas: str = '',
-        stack: str = 'default',
+        stack: str = '',
         detach: bool = False,
         options: str = '',
     ) -> None:
@@ -696,7 +698,7 @@ class SugarSwarmStack(SugarSwarmBase):
     def _cmd_deploy(
         self,
         /,
-        stack: str = 'default',
+        stack: str = '',
         options: str = '',
     ) -> None:
         """Deploy a new stack from a compose file.
@@ -719,6 +721,7 @@ class SugarSwarmStack(SugarSwarmBase):
             stack_name=stack,
             options_args=options_args,
             backend_args=['stack', 'deploy'],
+            include_compose_files=True,
         )
 
     @docparams(
@@ -730,7 +733,7 @@ class SugarSwarmStack(SugarSwarmBase):
     def _cmd_ls(
         self,
         /,
-        stack: str = 'default',
+        stack: str = '',
         quiet: bool = False,
         options: str = '',
     ) -> None:
@@ -761,7 +764,7 @@ class SugarSwarmStack(SugarSwarmBase):
     def _cmd_ps(
         self,
         /,
-        stack: str = 'default',
+        stack: str = '',
         quiet: bool = False,
         options: str = '',
     ) -> None:
@@ -787,7 +790,7 @@ class SugarSwarmStack(SugarSwarmBase):
     def _cmd_rm(
         self,
         /,
-        stack: str = 'default',
+        stack: str = '',
         options: str = '',
     ) -> None:
         """Remove the stack from the swarm."""
