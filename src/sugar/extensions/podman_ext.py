@@ -144,6 +144,7 @@ class SugarPodmanComposeExt(SugarBase):
         cmd_args: list[str] = [],
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
         _err: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stderr,
+        stdin_data: Union[str, bytes, io.StringIO, None] = None,
     ) -> None:
         """
         Override _call_backend_app to handle environment variables.
@@ -195,7 +196,7 @@ class SugarPodmanComposeExt(SugarBase):
                     )
 
         sh_extras = {
-            '_in': sys.stdin,
+            '_in': stdin_data if stdin_data else sys.stdin,
             '_out': _out,
             '_err': _err,
             '_no_err': True,

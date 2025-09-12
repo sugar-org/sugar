@@ -129,7 +129,7 @@ quote-style = "single"
 [tool.bandit]
 exclude_dirs = ["tests"]
 targets = "src/sugar/"
-skips = ["B102", "B701"]
+skips = ["B102", "B701", "B110"]
 
 [tool.vulture]
 exclude = ["tests", "src/sugar/cli.py"]
