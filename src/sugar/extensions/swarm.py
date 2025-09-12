@@ -315,11 +315,9 @@ class SugarSwarmBase(SugarComposeBase):
         for f in env_files:
             args.extend(['--env-file', f])
 
-        # compose files
         for p in self._get_config_files_path():
             args.extend(['--file', p])
 
-        # project name
         pn = self.service_profile.get('project-name')
         if pn:
             args.extend(['--project-name', pn])
@@ -330,7 +328,6 @@ class SugarSwarmBase(SugarComposeBase):
         out_buf = io.StringIO()
         err_buf = io.StringIO()
         try:
-            # Correct order: docker compose [global flags] config
             self.backend_app(
                 *self._compose_global_args(),
                 'config',
@@ -339,7 +336,6 @@ class SugarSwarmBase(SugarComposeBase):
             )
             return out_buf.getvalue()
         except sh.ErrorReturnCode as e:
-            # Prefer Docker's stderr; fall back to stdout or exception text
             err = err_buf.getvalue().strip()
             out = out_buf.getvalue().strip()
             msg = err or out or str(e)
@@ -423,7 +419,6 @@ class SugarSwarm(SugarSwarmBase):
 
         This command initializes a new swarm on the current Docker engine.
         """
-        # For swarm init, use the wrapper method instead
         options_args = self._get_list_args(options)
         self._call_command('init', options_args=options_args)
 
@@ -559,7 +554,6 @@ class SugarSwarmService(SugarSwarmBase):
             )
             return False
 
-    # ---------- service commands ----------
     @docparams(doc_options)
     def _cmd_create(self, options: str = '') -> None:
         """Create a new service (docker service create)."""
@@ -681,7 +675,6 @@ class SugarSwarmService(SugarSwarmBase):
         if quiet:
             opts.append('--quiet')
 
-        # Determine targets
         targets = self._get_services_names(
             services=service,
             all=False,
@@ -727,7 +720,6 @@ class SugarSwarmService(SugarSwarmBase):
 
         _args_extra = {'all': False, 'stack': stack}
 
-        # alias
         fn = self._get_services_names
 
         pairs: list[str] = []
@@ -815,16 +807,14 @@ class SugarSwarmStack(SugarSwarmBase):
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
-        # Render compose once, in-process, using the Compose plugin
         yaml_text = self._render_compose_config()
         options_args = self._get_list_args(options)
 
-        # docker stack deploy -c - <stack>
         self.backend_args = ['stack', 'deploy', '-c', '-']
         self._call_backend_app(
             stack,
             options_args=options_args,
-            stdin_data=yaml_text,  # <- the internal piping
+            stdin_data=yaml_text,
         )
 
     @docparams(
