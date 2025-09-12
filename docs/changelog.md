@@ -1,6 +1,13 @@
 # Release Notes
 ---
 
+## [1.19.2](https://github.com/sugar-org/sugar/compare/1.19.1...1.19.2) (2025-09-12)
+
+
+### Bug Fixes
+
+* Fix swarm deploy limitations with "extends" ([#195](https://github.com/sugar-org/sugar/issues/195)) ([0960c29](https://github.com/sugar-org/sugar/commit/0960c2942b9acd0cb967441f2751ba2002b6d84f))
+
 ## [1.19.1](https://github.com/sugar-org/sugar/compare/1.19.0...1.19.1) (2025-09-11)
 
 
