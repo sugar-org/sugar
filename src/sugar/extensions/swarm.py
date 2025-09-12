@@ -18,9 +18,10 @@ import sys
 from typing import Any, Union
 
 import sh
+import yaml
 
 from sugar.docs import docparams
-from sugar.extensions.compose import SugarComposeBase
+from sugar.extensions.compose import SugarCompose, SugarComposeBase
 from sugar.logs import SugarError, SugarLogs
 from sugar.utils import prepend_stack_name
 from sugar.validation import require_not_blank
@@ -203,17 +204,34 @@ class SugarSwarmBase(SugarComposeBase):
         backend_args: list[str] = [],
         _out: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stdout,
         _err: Union[io.TextIOWrapper, io.StringIO, Any] = sys.stderr,
-        stdin_data: Union[str, bytes, io.StringIO, None] = None,
     ) -> None:
-        """Call docker stack commands with proper structure."""
+        """
+        Call docker stack commands with proper structure.
+
+        For `stack deploy -c -`, internally pipe the rendered compose YAML.
+        """
         self.backend_args = backend_args.copy()
+
+        stdin_payload: Union[str, bytes, io.StringIO, None] = None
+
+        # If we're deploying with stdin (`-c -`),
+        # render and feed the compose YAML
+        args_size = 3
+        if (
+            len(self.backend_args) >= args_size
+            and self.backend_args[0] == 'stack'
+            and self.backend_args[1] == 'deploy'
+            and '-c' in self.backend_args
+            and '-' in self.backend_args
+        ):
+            stdin_payload = self._render_compose_config()
 
         self._call_backend_app(
             stack_name,
             options_args=options_args,
             _out=_out,
             _err=_err,
-            stdin_data=stdin_data,
+            stdin_data=stdin_payload,
         )
 
     def _call_command(
@@ -281,6 +299,100 @@ class SugarSwarmBase(SugarComposeBase):
                 SugarError.SUGAR_COMMAND_ERROR,
             )
             return []
+
+    def _compose_global_args(self) -> list[str]:
+        args: list[str] = ['compose']
+
+        # env-file (optional)
+        _env_files = self.service_profile.get('env-file')
+        if isinstance(_env_files, str):
+            env_files = [_env_files]
+        elif isinstance(_env_files, list):
+            env_files = [f for f in _env_files if isinstance(f, str)]
+        else:
+            env_files = []
+
+        for f in env_files:
+            args.extend(['--env-file', f])
+
+        # compose files
+        for p in self._get_config_files_path():
+            args.extend(['--file', p])
+
+        # project name
+        pn = self.service_profile.get('project-name')
+        if pn:
+            args.extend(['--project-name', pn])
+
+        return args
+
+    def _compose_config_text(self) -> str:
+        out_buf = io.StringIO()
+        err_buf = io.StringIO()
+        try:
+            # Correct order: docker compose [global flags] config
+            self.backend_app(
+                *self._compose_global_args(),
+                'config',
+                _out=out_buf,
+                _err=err_buf,
+            )
+            return out_buf.getvalue()
+        except sh.ErrorReturnCode as e:
+            # Prefer Docker's stderr; fall back to stdout or exception text
+            err = err_buf.getvalue().strip()
+            out = out_buf.getvalue().strip()
+            msg = err or out or str(e)
+            SugarLogs.raise_error(
+                f'docker compose config failed:\n{msg}',
+                SugarError.SUGAR_COMMAND_ERROR,
+            )
+            return ''
+
+    def _normalize_for_stack(self, doc: dict[str, Any]) -> dict[str, Any]:
+        doc.pop('name', None)
+
+        svcs = doc.get('services') or {}
+        for svc in svcs.values():
+            ports = (svc or {}).get('ports') or []
+            for p in ports:
+                if not isinstance(p, dict):
+                    continue
+                for key in ('published', 'target'):
+                    v = p.get(key)
+                    if isinstance(v, str) and v.isdigit():
+                        p[key] = int(v)
+        return doc
+
+    def _render_compose_config(self) -> str:
+        """
+        Use SugarCompose to render the effective YAML.
+
+        It returns it as a string to be piped into `stack deploy -c -`.
+        """
+        compose = SugarCompose()
+        compose.load(
+            file=self.file,
+            profile=self.profile_selected,
+            dry_run=self.dry_run,
+            verbose=self.verbose,
+        )
+
+        out, err = io.StringIO(), io.StringIO()
+        compose._call_backend_app('config', _out=out, _err=err)
+
+        yaml_text = out.getvalue()
+        if not yaml_text.strip():
+            SugarLogs.raise_error(
+                f'Rendered compose configuration is empty.'
+                f'\n\nSTDERR:\n{err.getvalue()}',
+                SugarError.SUGAR_INVALID_CONFIGURATION,
+            )
+
+        doc = self._normalize_for_stack(yaml.safe_load(yaml_text))
+        yaml_text = yaml.safe_dump(doc, sort_keys=False)
+
+        return yaml_text
 
 
 class SugarSwarm(SugarSwarmBase):
@@ -684,71 +796,6 @@ class SugarSwarmStack(SugarSwarmBase):
     def _load_backend_args(self) -> None:
         self.backend_args = ['stack']
 
-    def _render_compose_config(self) -> str:
-        """
-        Render the effective Compose config (YAML) using `config` command.
-
-        The output is returned as a string to be piped into
-        `stack deploy -c -`.
-        """
-        args: list[str] = ['compose', 'config']
-
-        # env-file(s)
-        _env_files = self.service_profile.get('env-file')
-        if isinstance(_env_files, str):
-            env_files = [_env_files]
-        elif isinstance(_env_files, list):
-            env_files = [f for f in _env_files if isinstance(f, str)]
-        else:
-            env_files = []
-
-        for f in env_files:
-            args.extend(['--env-file', f])
-
-        # compose file(s)
-        for p in self._get_config_files_path():
-            args.extend(['--file', p])
-
-        # project name if present
-        proj = self.service_profile.get('project-name')
-        if proj:
-            args.extend(['--project-name', str(proj)])
-
-        # Log what we are about to run
-        if self.verbose or self.dry_run:
-            SugarLogs.print_info(f'>>> {sh.docker} {" ".join(args)}')
-            SugarLogs.print_info('-' * 80)
-
-        if self.dry_run:
-            # No need to actually render anything during dry-run
-            return ''
-
-        out = io.StringIO()
-        err = io.StringIO()
-        try:
-            sh.docker(
-                *args,
-                _out=out,
-                _err=err,
-                _no_err=True,
-            )
-        except sh.ErrorReturnCode as e:
-            SugarLogs.raise_error(str(e), SugarError.SH_ERROR_RETURN_CODE)
-
-        stderr_txt = err.getvalue()
-        if stderr_txt.strip():
-            # Docker sometimes writes warnings to stderr;
-            # treat hard errors by exit code above.
-            pass
-
-        yaml_text = out.getvalue()
-        if not yaml_text.strip():
-            SugarLogs.raise_error(
-                'Rendered compose configuration is empty.',
-                SugarError.SUGAR_INVALID_CONFIGURATION,
-            )
-        return yaml_text
-
     @docparams(
         {
             **doc_stack,
@@ -761,32 +808,23 @@ class SugarSwarmStack(SugarSwarmBase):
         stack: str = '',
         options: str = '',
     ) -> None:
-        """Deploy a new stack from a compose file via internal piping.
-
-        We render `docker compose config` in memory and feed it to
-        `docker stack deploy -c - <stack>` through STDIN.
-        """
+        """Deploy a new stack from a compose file (via stdin piping)."""
         if not stack:
             SugarLogs.raise_error(
                 MSG_ERROR_STACK_NAME,
                 SugarError.SUGAR_INVALID_PARAMETER,
             )
 
+        # Render compose once, in-process, using the Compose plugin
+        yaml_text = self._render_compose_config()
         options_args = self._get_list_args(options)
 
-        # Build the rendered YAML unless we're in dry-run
-        stdin_payload: Union[str, bytes, io.StringIO, None]
-        if self.dry_run:
-            stdin_payload = None
-        else:
-            stdin_payload = self._render_compose_config()
-
-        # Use `-c -` so stack deploy reads from STDIN
-        self._call_stack_command(
-            stack_name=stack,
+        # docker stack deploy -c - <stack>
+        self.backend_args = ['stack', 'deploy', '-c', '-']
+        self._call_backend_app(
+            stack,
             options_args=options_args,
-            backend_args=['stack', 'deploy', '-c', '-'],
-            stdin_data=stdin_payload,
+            stdin_data=yaml_text,  # <- the internal piping
         )
 
     @docparams(

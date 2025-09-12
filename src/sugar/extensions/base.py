@@ -12,7 +12,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, TextIO, Union
 
 import dotenv
 import sh
@@ -32,6 +32,31 @@ TEMPLATE = Environment(
 )
 
 SUGAR_CURRENT_PATH = Path(__file__).parent.parent
+
+
+class _TeeText:
+    def __init__(self, a: TextIO, b: TextIO) -> None:
+        self.a: TextIO = a
+        self.b: TextIO = b
+
+    def write(self, data: Union[str, bytes]) -> None:
+        if isinstance(data, bytes):
+            try:
+                text = data.decode('utf-8')
+            except Exception:
+                text = data.decode('utf-8', errors='replace')
+        else:
+            text = data
+
+        self.a.write(text)
+        self.b.write(text)
+
+    def flush(self) -> None:
+        for s in (self.a, self.b):
+            try:
+                s.flush()
+            except Exception:
+                pass
 
 
 class SugarBase(ABC):
@@ -136,25 +161,37 @@ class SugarBase(ABC):
 
         nodes_or_services = services or nodes
 
-        # Execute pre-run hooks
+        # Execute pre-run hooks...
         extension = camel_to_snake(
             self.__class__.__name__.replace('Sugar', '')
         )
         self._execute_hooks('pre-run', extension, action)
 
+        buf_out, buf_err = io.StringIO(), io.StringIO()
+        out_stream = _TeeText(_out, buf_out)
+        err_stream = _TeeText(_err, buf_err)
+
         sh_extras = {
-            '_in': stdin_data if stdin_data is not None else sys.stdin,
-            '_out': _out,
-            '_err': _err,
+            '_in': sys.stdin,  # default
+            '_out': out_stream,
+            '_err': err_stream,
             '_no_err': True,
             '_env': os.environ,
             '_bg': True,
             '_bg_exc': False,
+            '_encoding': 'utf-8',  # get text, not bytes
         }
+
+        # If caller provided stdin payload, feed that instead of the real stdin
+        if stdin_data is not None:
+            if isinstance(stdin_data, io.StringIO):
+                sh_extras['_in'] = stdin_data.getvalue()
+            else:
+                sh_extras['_in'] = stdin_data  # str or bytes
 
         positional_parameters = [
             *self.backend_args,
-            *[action],
+            action,
             *options_args,
             *nodes_or_services,
             *cmd_args,
@@ -172,18 +209,26 @@ class SugarBase(ABC):
             )
             return
 
-        p = self.backend_app(*positional_parameters, **sh_extras)
-
         try:
+            p = self.backend_app(*positional_parameters, **sh_extras)
             p.wait()
-        except sh.ErrorReturnCode as e:
-            SugarLogs.raise_error(str(e), SugarError.SH_ERROR_RETURN_CODE)
+        except sh.ErrorReturnCode:
+            # Show the real error output
+            msg = (
+                '\n [EE] \n\n'
+                f'  RAN: {self.backend_app} '
+                f'{" ".join(positional_parameters)}\n\n'
+                f'  STDOUT:\n{buf_out.getvalue()}\n\n'
+                f'  STDERR:\n{buf_err.getvalue()}\n'
+            )
+            SugarLogs.raise_error(msg, SugarError.SH_ERROR_RETURN_CODE)
         except KeyboardInterrupt:
             pid = p.pid
             p.kill()
             SugarLogs.raise_error(
                 f'Process {pid} killed.', SugarError.SH_KEYBOARD_INTERRUPT
             )
+
         self._execute_hooks('post-run', extension, action)
 
     def _check_config_file(self) -> bool:
