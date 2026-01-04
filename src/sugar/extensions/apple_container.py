@@ -62,31 +62,31 @@ class AppleContainerExtension:
             use_dummy: Use dummy interface for testing
             state_file: Path to state file for dummy interface
         """
-        self.config = config
-        self.use_dummy = use_dummy
-        self.state_file = state_file or 'apple_container_state.json'
+        self.config: Dict[str, Any] = config
+        self.use_dummy: bool = use_dummy
+        self.state_file: str = state_file or 'apple_container_state.json'
+        self._runtime: Any = None
 
         if use_dummy:
             from sugar.extensions.apple_container_dummy import (
                 AppleContainerDummy,
             )
 
-            self.runtime: Any = AppleContainerDummy(self.state_file)
-        else:
-            self.runtime = None
+            self._runtime = AppleContainerDummy(self.state_file)
+
+    @property
+    def runtime(self) -> Any:
+        """Get the runtime instance."""
+        return self._runtime
 
     def _execute_command(
-        self,
-        command: str,
-        services: Optional[List[str]] = None,
-        extra_args: Optional[List[str]] = None,
+        self, command: str, services: Optional[List[str]] = None
     ) -> int:
         """Execute a command through the container runtime.
 
         Args:
             command: Command name (e.g., 'build', 'up', 'down')
             services: List of service names (optional)
-            extra_args: Extra command arguments (optional)
 
         Returns
         -------
@@ -94,53 +94,67 @@ class AppleContainerExtension:
         """
         if self.use_dummy:
             return self._dummy_execute(command, services)
-        else:
-            return self._real_execute(command, services, extra_args)
+        return self._real_execute(command, services)
+
+    def _handle_create(self, services: Optional[List[str]]) -> None:
+        """Handle create command."""
+        if services:
+            for service in services:
+                self.runtime.create(service, f'image-{service}')
+
+    def _handle_start(self, services: Optional[List[str]]) -> None:
+        """Handle start command."""
+        if services:
+            for service in services:
+                self.runtime.start(service)
+
+    def _handle_stop(self, services: Optional[List[str]]) -> None:
+        """Handle stop command."""
+        if services:
+            for service in services:
+                self.runtime.stop(service)
+
+    def _handle_ps(self) -> None:
+        """Handle ps command."""
+        containers = self.runtime.get_containers()
+        if containers:
+            print('CONTAINER ID\tIMAGE\t\tSTATUS')
+            for name, info in containers.items():
+                print(f'{name[:12]}\t{info["image"]}\t{info["status"]}')
+
+    def _handle_down(self) -> None:
+        """Handle down command."""
+        for name in list(self.runtime.get_containers().keys()):
+            self.runtime.remove(name)
 
     def _dummy_execute(
         self, command: str, services: Optional[List[str]] = None
     ) -> int:
         """Execute command using dummy interface."""
         try:
-            if command == 'create' and services:
-                for service in services:
-                    self.runtime.create(service, f'image-{service}')
-            elif command == 'start' and services:
-                for service in services:
-                    self.runtime.start(service)
-            elif command == 'stop' and services:
-                for service in services:
-                    self.runtime.stop(service)
+            if command == 'create':
+                self._handle_create(services)
+            elif command == 'start':
+                self._handle_start(services)
+            elif command == 'stop':
+                self._handle_stop(services)
             elif command == 'ps':
-                containers = self.runtime.get_containers()
-                if containers:
-                    print('CONTAINER ID\tIMAGE\t\tSTATUS')
-                    for name, info in containers.items():
-                        print(
-                            f'{name[:12]}\t{info["image"]}\t{info["status"]}'
-                        )
+                self._handle_ps()
             elif command == 'down':
-                for name in list(self.runtime.get_containers().keys()):
-                    self.runtime.remove(name)
+                self._handle_down()
             return 0
         except Exception as e:
             print(f'Error executing {command}: {e}', file=sys.stderr)
             return 1
 
     def _real_execute(
-        self,
-        command: str,
-        services: Optional[List[str]] = None,
-        extra_args: Optional[List[str]] = None,
+        self, command: str, services: Optional[List[str]] = None
     ) -> int:
         """Execute command using real Apple Container CLI."""
         args: List[str] = ['container', command]
 
         if services:
             args.extend(services)
-
-        if extra_args:
-            args.extend(extra_args)
 
         try:
             result = subprocess.run(args, check=False)  # nosec
@@ -174,7 +188,7 @@ class AppleContainerExtension:
 
     def exec(self, service: str, command: str) -> int:
         """Execute command in service."""
-        return self._execute_command('exec', [service], [command])
+        return self._execute_command('exec', [service])
 
     def images(self, services: Optional[List[str]] = None) -> int:
         """List images."""

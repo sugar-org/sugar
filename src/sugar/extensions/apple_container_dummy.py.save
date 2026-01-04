@@ -1,4 +1,4 @@
-"""Apple Container CLI Dummy Interface.
+nano src/sugar/extensions/apple_container_dummy.pynano src/sugar/extensions/apple_container_dummy.py"""Apple Container CLI Dummy Interface.
 
 Simulates Apple Container CLI for testing on non-Mac systems.
 """
@@ -7,7 +7,7 @@ import json
 import os
 
 from datetime import datetime
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 
 class AppleContainerDummy:
@@ -24,14 +24,14 @@ class AppleContainerDummy:
             state_file: Path to JSON file for storing state
         """
         self.state_file = state_file
-        self.state: Dict[str, Any] = self._load_state()
+        self.state = self._load_state()
 
     def _load_state(self) -> Dict[str, Any]:
         """Load state from JSON file or initialize empty state."""
         if os.path.exists(self.state_file):
             try:
                 with open(self.state_file) as f:
-                    return cast(Dict[str, Any], json.load(f))
+                    return json.load(f)
             except (json.JSONDecodeError, IOError):
                 return self._empty_state()
         return self._empty_state()
@@ -131,15 +131,7 @@ class AppleContainerDummy:
         return True
 
     def pause(self, name: str) -> bool:
-        """Pause a running container.
-
-        Args:
-            name: Container name
-
-        Returns
-        -------
-            True if paused successfully, False if not found
-        """
+        """Pause a container."""
         if name not in self.state['containers']:
             return False
 
@@ -148,15 +140,7 @@ class AppleContainerDummy:
         return True
 
     def unpause(self, name: str) -> bool:
-        """Unpause a paused container.
-
-        Args:
-            name: Container name
-
-        Returns
-        -------
-            True if unpaused successfully, False if not found
-        """
+        """Unpause a container."""
         if name not in self.state['containers']:
             return False
 
@@ -165,29 +149,12 @@ class AppleContainerDummy:
         return True
 
     def get_containers(self) -> Dict[str, Any]:
-        """Get all containers.
-
-        Returns
-        -------
-            Dictionary of all containers
-        """
-        containers: Dict[str, Any] = self.state['containers'].copy()
-        return containers
+        """Get all containers."""
+        return self.state['containers'].copy()
 
     def get_container(self, name: str) -> Optional[Dict[str, Any]]:
-        """Get a specific container.
-
-        Args:
-            name: Container name
-
-        Returns
-        -------
-            Container info if found, None otherwise
-        """
-        container_data = self.state['containers'].get(name)
-        if container_data is not None and isinstance(container_data, dict):
-            return cast(Dict[str, Any], container_data)
-        return None
+        """Get a specific container."""
+        return self.state['containers'].get(name)
 
     def clean(self) -> None:
         """Reset all state. Useful for testing."""
