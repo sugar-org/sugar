@@ -29,10 +29,10 @@ $ git clone https://github.com/osl-incubator/sugar.git
 ```
 
 Or download the
-[tarball](https://github.com/osl-incubator/sugar.git/tarball/main):
+[tarball](https://github.com/osl-incubator/sugar/tarball/main):
 
 ```bash
-$ curl -OJL https://github.com/osl-incubator/sugar.git/tarball/main
+$ curl -OJL https://github.com/osl-incubator/sugar/tarball/main
 ```
 
 Once you have a copy of the source, you can install it with:
