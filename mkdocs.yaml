@@ -12,7 +12,6 @@ nav:
   - Swarm Usage: swarm.md
   - Podman Extension: podman-ext.md
   - Contributing: contributing.md
-  - Swarm Usage: swarm.md
   - Changelog: changelog.md
   # - API: api/references.md
   # - Notebook page: example.ipynb
