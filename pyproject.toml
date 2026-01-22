@@ -105,7 +105,12 @@ exclude = [
 fix = true
 
 [tool.ruff.lint]
-ignore = ["RUF012", "PLR0913", "PLR0915"]
+ignore = [
+  "RUF012",
+  "PLR0913",
+  "PLR0915",
+  "PLC0415",  # `import` should be at the top-level of a file
+]
 select = [
   "E",   # pycodestyle
   "F",   # pyflakes

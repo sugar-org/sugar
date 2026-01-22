@@ -249,7 +249,7 @@ class SugarBase(ABC):
             '_env': os.environ,
         }
 
-        fd, filepath = tempfile.mkstemp(suffix='sugar', text=True)
+        _, filepath = tempfile.mkstemp(suffix='sugar', text=True)
 
         for hook in hooks:
             targets = hook.get('targets', {})
