@@ -388,7 +388,7 @@ class SugarSwarmBase(SugarComposeBase):
         doc = self._normalize_for_stack(yaml.safe_load(yaml_text))
         yaml_text = yaml.safe_dump(doc, sort_keys=False)
 
-        return yaml_text
+        return str(yaml_text)
 
 
 class SugarSwarm(SugarSwarmBase):

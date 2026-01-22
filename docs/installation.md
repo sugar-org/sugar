@@ -28,8 +28,7 @@ You can either clone the public repository:
 $ git clone https://github.com/osl-incubator/sugar.git
 ```
 
-Or download the
-[tarball](https://github.com/osl-incubator/sugar/tarball/main):
+Or download the [tarball](https://github.com/osl-incubator/sugar/tarball/main):
 
 ```bash
 $ curl -OJL https://github.com/osl-incubator/sugar/tarball/main
