@@ -145,3 +145,4 @@ min_confidence = 80
 paths = ["src/sugar/"]
 sort_by_size = true
 verbose = false
+textual = "^0.50.0"
