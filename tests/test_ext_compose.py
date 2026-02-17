@@ -187,3 +187,13 @@ def test_cmd_kill(
     captured = capsys.readouterr()
     for term in 'docker compose kill service1-1 service1-2'.split(' '):
         assert term in captured.out
+
+
+def test_cmd_build_services_with_spaces(
+    sugar_ext: SugarCompose, capsys: CaptureFixture[str]
+) -> None:
+    """Test that spaces around service names in comma-separated list are trimmed."""
+    sugar_ext._cmd_build(services='service1-1, service1-2', all=False, options='')
+    captured = capsys.readouterr()
+    for term in 'docker compose build service1-1 service1-2'.split(' '):
+        assert term in captured.out

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(poetry run python -m pytest:*)",
+      "Bash(PYTHONPATH=src python -m pytest:*)"
+    ]
+  }
+}
