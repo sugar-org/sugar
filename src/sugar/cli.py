@@ -20,6 +20,7 @@ from sugar.logs import SugarLogs
 
 EXIT_CODE_CONSTANT = 2
 
+# These are the only valid root flags for the sugar CLI
 # "count" means the number of parameters expected for each flag
 CLI_ROOT_FLAGS_VALUES_COUNT = {
     '--dry-run': 0,
@@ -427,20 +428,25 @@ def extract_root_config(
 ) -> dict[str, str | bool]:
     """Extract the root configuration from the CLI."""
     params = cli_list[1:]
-
-    # default values
     sugar_file = '.sugar.yaml'
     profile = ''
     dry_run = False
     verbose = False
-
     try:
         idx = 0
         while idx < len(params):
             arg = params[idx]
             if arg not in CLI_ROOT_FLAGS_VALUES_COUNT:
+                if arg.startswith('--'):
+                    typer.secho(
+                        f"Error: '{arg}' is not a valid parameter. "
+                        "Did you mean '--profile'? "
+                        "Usage: sugar --profile <name> <command>",
+                        fg='red',
+                        err=True,
+                    )
+                    raise typer.Exit(1)
                 break
-
             if arg == '--file':
                 try:
                     sugar_file = params[idx + 1]
@@ -455,8 +461,9 @@ def extract_root_config(
                 dry_run = True
             elif arg == '--verbose':
                 verbose = True
-
             idx += 1 + CLI_ROOT_FLAGS_VALUES_COUNT[arg]
+    except typer.Exit:
+        raise
     except Exception:
         red_text = typer.style(
             'The sugar config file was not correctly detected. '
@@ -465,7 +472,6 @@ def extract_root_config(
             bold=True,
         )
         typer.echo(red_text, err=True, color=True)
-
     return {
         'file': sugar_file,
         'profile': profile,
