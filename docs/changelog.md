@@ -1,6 +1,13 @@
 # Release Notes
 ---
 
+## [1.19.3](https://github.com/sugar-org/sugar/compare/1.19.2...1.19.3) (2026-09-26)
+
+
+### Bug Fixes
+
+* Add click as a direct dependency ([#209](https://github.com/sugar-org/sugar/issues/209)) ([1ab056e](https://github.com/sugar-org/sugar/commit/1ab056ebd1f13814226cfe46b99740febe3e8ee7))
+
 ## [1.19.2](https://github.com/sugar-org/sugar/compare/1.19.1...1.19.2) (2025-09-12)
 
 

@@ -2,4 +2,4 @@
 
 __author__ = 'Ivan Ogasawara'
 __email__ = 'ivan.ogasawara@gmail.com'
-__version__ = '1.19.2'  # semantic-release
+__version__ = '1.19.3'  # semantic-release
