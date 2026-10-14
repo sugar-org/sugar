@@ -1,5 +1,6 @@
 """Details screen for displaying container and service information."""
 
+from datetime import datetime
 from typing import Any, TypeVar
 
 from textual.app import ComposeResult
@@ -14,7 +15,6 @@ from textual.widgets import (
     Static,
 )
 
-# Define type variable for Screen
 T = TypeVar('T')
 
 
@@ -28,7 +28,6 @@ class DetailsScreen(Screen[T]):
     ]
 
     def compose(self) -> ComposeResult:
-        """Compose the details screen."""
         yield Header()
 
         yield Container(
@@ -43,25 +42,21 @@ class DetailsScreen(Screen[T]):
                     id='screen-header',
                 ),
                 Grid(
-                    # Configuration panel
                     Vertical(
                         Static('CONFIGURATION', classes='section-title'),
                         self._create_config_panel(),
                         classes='detail-panel',
                     ),
-                    # Status panel
                     Vertical(
                         Static('STATISTICS', classes='section-title'),
                         self._create_stats_panel(),
                         classes='detail-panel',
                     ),
-                    # Volumes panel
                     Vertical(
                         Static('VOLUMES', classes='section-title'),
                         self._create_volumes_panel(),
                         classes='detail-panel',
                     ),
-                    # Network panel
                     Vertical(
                         Static('NETWORKS', classes='section-title'),
                         self._create_network_panel(),
@@ -84,128 +79,196 @@ class DetailsScreen(Screen[T]):
         yield Footer()
 
     def _create_config_panel(self) -> Vertical:
-        """Create the configuration panel."""
         return Vertical(
             Horizontal(
                 Label('Image:', classes='detail-label'),
-                Label('nginx:latest', classes='detail-value', id='image-name'),
+                Label('', classes='detail-value', id='image-name'),
             ),
             Horizontal(
                 Label('Container ID:', classes='detail-label'),
-                Label(
-                    'abc123def456', classes='detail-value', id='container-id'
-                ),
+                Label('', classes='detail-value', id='container-id'),
             ),
             Horizontal(
                 Label('Created:', classes='detail-label'),
-                Label(
-                    '2024-03-07 08:42:15',
-                    classes='detail-value',
-                    id='created-at',
-                ),
+                Label('', classes='detail-value', id='created-at'),
             ),
             Horizontal(
                 Label('Status:', classes='detail-label'),
-                Label('● Running', classes='detail-value', id='status'),
+                Label('', classes='detail-value', id='status'),
             ),
             Horizontal(
                 Label('Ports:', classes='detail-label'),
-                Label('8080:80, 443:443', classes='detail-value', id='ports'),
+                Label('', classes='detail-value', id='ports'),
             ),
             Horizontal(
                 Label('Env Vars:', classes='detail-label'),
-                Label(
-                    'NGINX_HOST=example.com, PORT=80',
-                    classes='detail-value',
-                    id='env-vars',
-                ),
+                Label('', classes='detail-value', id='env-vars'),
             ),
             id='config-details',
         )
 
     def _create_stats_panel(self) -> Vertical:
-        """Create the stats panel."""
         return Vertical(
             Horizontal(
                 Label('CPU Usage:', classes='detail-label'),
-                Label('2.5%', classes='detail-value', id='cpu-usage'),
+                Label('', classes='detail-value', id='cpu-usage'),
             ),
             Horizontal(
                 Label('Memory:', classes='detail-label'),
-                Label(
-                    '128MB / 512MB', classes='detail-value', id='memory-usage'
-                ),
+                Label('', classes='detail-value', id='memory-usage'),
             ),
             Horizontal(
                 Label('Network In:', classes='detail-label'),
-                Label('1.2MB/s', classes='detail-value', id='network-in'),
+                Label('', classes='detail-value', id='network-in'),
             ),
             Horizontal(
                 Label('Network Out:', classes='detail-label'),
-                Label('0.8MB/s', classes='detail-value', id='network-out'),
+                Label('', classes='detail-value', id='network-out'),
             ),
             Horizontal(
                 Label('Uptime:', classes='detail-label'),
-                Label('2d 3h 45m', classes='detail-value', id='uptime'),
+                Label('', classes='detail-value', id='uptime'),
             ),
             Horizontal(
                 Label('Restarts:', classes='detail-label'),
-                Label('0', classes='detail-value', id='restarts'),
+                Label('', classes='detail-value', id='restarts'),
             ),
             id='stats-details',
         )
 
     def _create_volumes_panel(self) -> DataTable[Any]:
-        """Create the volumes panel."""
         volumes_table: DataTable[Any] = DataTable(id='volumes-table')
         volumes_table.cursor_type = 'row'
         volumes_table.add_columns('Source', 'Destination', 'Mode')
-
-        # Add mock data
-        volumes_table.add_rows(
-            [
-                ('/data', '/var/www/html', 'rw'),
-                ('nginx_logs', '/var/log/nginx', 'rw'),
-                ('nginx_conf', '/etc/nginx/conf.d', 'ro'),
-            ]
-        )
-
         return volumes_table
 
     def _create_network_panel(self) -> DataTable[Any]:
-        """Create the network panel."""
         network_table: DataTable[Any] = DataTable(id='network-table')
         network_table.cursor_type = 'row'
         network_table.add_columns('Network', 'IP Address', 'Gateway')
-
-        # Add mock data
-        network_table.add_rows(
-            [
-                ('bridge', '172.17.0.2', '172.17.0.1'),
-                ('host', '127.0.0.1', '-'),
-            ]
-        )
-
         return network_table
 
     def on_mount(self) -> None:
-        """Handle mounting of the screen."""
-        self.query_one('#service-name', Static).update('nginx')
-        self.notify('Details screen loaded')
+        self.refresh_data()
 
-    def action_refresh(self) -> None:
-        """Refresh the details data."""
-        self.notify('Refreshing service details...')
+    def on_resume(self) -> None:
+        self.refresh_data()
+
+    def refresh_data(self) -> None:
+        app = self.app
+
+        # Preserve selected container before refresh
+        selected_container = app.data.get("selected_container", None)
+
+        app.data = app.load_data()
+
+        # Restore selected container after refresh
+        app.data["selected_container"] = selected_container
+
+        selected = app.data.get("selected_container", None)
+
+        # If rowkey or tuple, convert it to string
+        if hasattr(selected, "value"):
+            selected = selected.value
+        if isinstance(selected, tuple):
+            selected = selected[0]
+
+        if not selected:
+            self.notify("No container selected", severity="error")
+            return
+
+        containers = app.data["system_metrics"].get("containers", [])
+        container = next((c for c in containers if c.name == selected), None)
+
+        if not container:
+            self.notify("Container not found", severity="error")
+            return
+
+        self.query_one('#service-name', Static).update(container.name)
+        self.query_one('#image-name', Static).update(
+            container.image.tags[0] if container.image.tags else "N/A"
+        )
+        self.query_one('#container-id', Static).update(container.short_id)
+
+        created_str = container.attrs["Created"].replace("Z", "")
+        created = datetime.fromisoformat(created_str).strftime("%Y-%m-%d %H:%M:%S")
+        self.query_one('#created-at', Static).update(created)
+
+        self.query_one('#status', Static).update(
+            "● Running" if container.status == "running" else "○ Stopped"
+        )
+
+        ports_dict = container.attrs.get("NetworkSettings", {}).get("Ports") or {}
+        ports = []
+        for key, mapping in ports_dict.items():
+            if mapping:
+                for m in mapping:
+                    ports.append(f"{m['HostPort']}->{key.split('/')[0]}")
+
+        self.query_one('#ports', Static).update(", ".join(ports) or "N/A")
+
+        env_vars = container.attrs.get("Config", {}).get("Env") or []
+        self.query_one('#env-vars', Static).update(", ".join(env_vars) or "N/A")
+
+        volumes_table = self.query_one('#volumes-table', DataTable)
+        volumes_table.clear()
+        mounts = container.attrs.get("Mounts", []) or []
+        for m in mounts:
+            volumes_table.add_row(m.get("Source", "-"), m.get("Destination", "-"), m.get("Mode", "-"))
+
+        network_table = self.query_one('#network-table', DataTable)
+        network_table.clear()
+        networks = container.attrs.get("NetworkSettings", {}).get("Networks", {}) or {}
+        for net, info in networks.items():
+            network_table.add_row(net, info.get("IPAddress", "-"), info.get("Gateway", "-"))
+
+        self.query_one('#cpu-usage', Static).update("N/A")
+        self.query_one('#memory-usage', Static).update("N/A")
+        self.query_one('#network-in', Static).update("N/A")
+        self.query_one('#network-out', Static).update("N/A")
+
+        # ✅ FIXED UPTIME
+        started_str = container.attrs["State"]["StartedAt"].replace("Z", "")
+        started = datetime.fromisoformat(started_str)
+        uptime = datetime.now() - started
+        self.query_one('#uptime', Static).update(str(uptime).split('.')[0])
+
+        self.query_one('#restarts', Static).update(str(container.attrs["RestartCount"]))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses."""
         button_id = event.button.id
+
+        selected = self.app.data.get("selected_container")
+        if hasattr(selected, "value"):
+            selected = selected.value
+
+        containers = self.app.data["system_metrics"].get("containers", [])
+        container = next((c for c in containers if c.name == selected), None)
 
         if button_id == 'logs-btn':
             self.app.push_screen('logs')
+
         elif button_id == 'restart-btn':
-            self.notify('Restarting service...', title='Restarting')
+            if container:
+                try:
+                    container.restart()
+                    self.notify(f'Restarted {container.name}', title='Restarted')
+                    self.refresh_data()
+                except Exception as e:
+                    self.notify(f'Error restarting container: {e}', severity='error')
+            else:
+                self.notify("No container selected", severity="error")
+
         elif button_id == 'stop-btn':
-            self.notify('Stopping service...', title='Stopping')
+            if container:
+                try:
+                    container.stop()
+                    self.notify(f'Stopped {container.name}', title='Stopped')
+                    self.refresh_data()
+                except Exception as e:
+                    self.notify(f'Error stopping container: {e}', severity='error')
+            else:
+                self.notify("No container selected", severity="error")
+
         elif button_id == 'back-btn':
             self.app.pop_screen()

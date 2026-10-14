@@ -11,19 +11,15 @@ from textual.widgets import (
     DataTable,
     Footer,
     Header,
-    Label,
-    Rule,
     Static,
 )
 
-# Define the type parameter for Screen
 T = TypeVar('T')
 
 
 class ProfileScreen(Screen[T]):
     """Screen for managing profiles."""
 
-    # Define CSS path for screen-specific styles
     CSS_PATH = Path(__file__).parent.parent / 'styles/screens.css'
 
     BINDINGS = [
@@ -33,7 +29,6 @@ class ProfileScreen(Screen[T]):
     ]
 
     def compose(self) -> ComposeResult:
-        """Compose the profile screen."""
         yield Header()
 
         yield Container(
@@ -41,27 +36,14 @@ class ProfileScreen(Screen[T]):
                 Static('PROFILE MANAGEMENT', classes='title'),
                 Horizontal(
                     Static('Manage your Sugar profiles', classes='subtitle'),
-                    Static('Total Profiles: 4', classes='subtitle-right'),
+                    Static('Total Profiles: 0', classes='subtitle-right', id='total-profiles'),
                     id='screen-header',
                 ),
-                # Give the main table area more space
-                Vertical(
-                    self._create_profiles_table(), id='main-table-container'
-                ),
+                Vertical(self._create_profiles_table(), id='main-table-container'),
                 Horizontal(
-                    Button(
-                        'Add Profile', id='add-profile-btn', variant='primary'
-                    ),
-                    Button(
-                        'Edit Profile',
-                        id='edit-profile-btn',
-                        variant='primary',
-                    ),
-                    Button(
-                        'Delete Profile',
-                        id='delete-profile-btn',
-                        variant='error',
-                    ),
+                    Button('Add Profile', id='add-profile-btn', variant='primary'),
+                    Button('Edit Profile', id='edit-profile-btn', variant='primary'),
+                    Button('Delete Profile', id='delete-profile-btn', variant='error'),
                     Button('Back', id='back-btn', variant='default'),
                     id='profile-actions',
                 ),
@@ -73,124 +55,70 @@ class ProfileScreen(Screen[T]):
         yield Footer()
 
     def _create_profiles_table(self) -> DataTable[Any]:
-        """Create the profiles table."""
-        # Create the table and give it explicit height styling
         profiles_table: DataTable[Any] = DataTable(id='profiles-detail-table')
         profiles_table.cursor_type = 'row'
-        # Set explicit height to ensure visibility
-        # profiles_table.styles.height = "1fr"
-        # profiles_table.styles.min_height = 15
-
         profiles_table.add_columns(
             'Profile', 'Project Name', 'Config Path', 'Services', 'Status'
         )
-
-        # Add mock data
-        profiles_table.add_rows(
-            [
-                (
-                    'development',
-                    'project-dev',
-                    'containers/dev/compose.yaml',
-                    'frontend, api, db',
-                    '● Active',
-                ),
-                (
-                    'staging',
-                    'project-staging',
-                    'containers/staging/compose.yaml',
-                    'All services',
-                    '● Active',
-                ),
-                (
-                    'production',
-                    'project-prod',
-                    'containers/prod/compose.yaml',
-                    'web, api, db, cache',
-                    '○ Inactive',
-                ),
-                (
-                    'testing',
-                    'project-test',
-                    'containers/test/compose.yaml',
-                    'test-suite, mockdb',
-                    '○ Inactive',
-                ),
-            ]
-        )
-
         return profiles_table
 
     def on_mount(self) -> None:
-        """Handle mounting of the screen."""
         self.notify('Profile screen loaded')
+        self.refresh_data()
 
-        # Update the details section with the first profile's data
-        self._update_profile_details(
-            'development',
-            'project-dev',
-            'containers/dev/compose.yaml',
-            'frontend, api, db',
-        )
+    def on_resume(self) -> None:
+        self.refresh_data()
 
-    def _update_profile_details(
-        self, name: str, project: str, config: str, services: str
-    ) -> None:
-        """Update the profile details section with the selected profile."""
-        # Create details container if it doesn't exist
-        # Fix: Use single # for ID selector
-        if not self.query('#profile-details'):
-            details = Vertical(
-                Static('Profile Details', classes='section-title'),
-                Horizontal(
-                    Label('Name:', classes='detail-label'),
-                    Label(name, classes='detail-value', id='profile-name'),
-                ),
-                Horizontal(
-                    Label('Project:', classes='detail-label'),
-                    Label(project, classes='detail-value', id='project-name'),
-                ),
-                Horizontal(
-                    Label('Config:', classes='detail-label'),
-                    Label(config, classes='detail-value', id='config-path'),
-                ),
-                Horizontal(
-                    Label('Services:', classes='detail-label'),
-                    Label(
-                        services, classes='detail-value', id='services-list'
-                    ),
-                ),
-                id='profile-details',
+    def refresh_data(self) -> None:
+        app = self.app
+        app.data = app.load_data()
+
+        containers = app.data["system_metrics"].get("containers", [])
+
+        profiles = {}
+
+        for c in containers:
+            name = c.name
+            profile = name.split('-', 1)[0] if '-' in name else 'default'
+
+            if profile not in profiles:
+                profiles[profile] = {
+                    "services": [],
+                    "status": "● Active",
+                    "project": f"project-{profile}",
+                    "config": f"containers/{profile}/compose.yaml"
+                }
+
+            profiles[profile]["services"].append(name)
+
+            if c.status != "running":
+                profiles[profile]["status"] = "○ Inactive"
+
+        table = self.query_one(DataTable)
+        table.clear()
+
+        for profile, data in profiles.items():
+            services = ", ".join(data["services"])
+            table.add_row(
+                profile,
+                data["project"],
+                data["config"],
+                services,
+                data["status"]
             )
 
-            # Add to the main container
-            self.query_one('#main-table-container').mount(Rule())
-            self.query_one('#main-table-container').mount(details)
-        # Otherwise update existing labels
-        else:
-            self.query_one('#profile-name', Label).update(name)
-            self.query_one('#project-name', Label).update(project)
-            self.query_one('#config-path', Label).update(config)
-            self.query_one('#services-list', Label).update(services)
-
-    def action_refresh(self) -> None:
-        """Refresh the profiles data."""
-        self.notify('Refreshing profiles data...')
+        self.query_one('#total-profiles', Static).update(f"Total Profiles: {len(profiles)}")
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Update details when a profile is selected in the table."""
         table = event.data_table
         row_idx = table.cursor_row
         if row_idx is not None:
-            # Get the data from the selected row
             row_data = table.get_row_at(row_idx)
-            # Update the details section
-            self._update_profile_details(
-                row_data[0], row_data[1], row_data[2], row_data[3]
-            )
+            profile_name = row_data[0]
+            self.app.data["selected_profile"] = profile_name
+            self.notify(f"Selected profile: {profile_name}")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses."""
         button_id = event.button.id
 
         if button_id == 'add-profile-btn':
