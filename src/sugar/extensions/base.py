@@ -433,7 +433,7 @@ class SugarBase(ABC):
                 )
             ]
         elif _arg_services:
-            service_names = _arg_services.split(',')
+            service_names = [s.strip() for s in _arg_services.split(',')]
         elif services_default:
             service_names = services_default
         else:
