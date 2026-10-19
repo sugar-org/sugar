@@ -408,8 +408,8 @@ class SugarSwarm(SugarSwarmBase):
     ) -> None:
         """Display and rotate the root CA."""
         options_args = self._get_list_args(options)
-        self._call_command('join', options_args=options_args)
-
+        self._call_command('ca', options_args=options_args)
+        
     @docparams(doc_common_no_services)
     def _cmd_init(
         self,

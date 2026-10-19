@@ -176,6 +176,15 @@ class TestSugarSwarm:
                     'join', options_args=['--token', 'token123']
                 )
 
+    def test_cmd_ca(self, sugar_swarm: SugarSwarm) -> None:
+        """Test _cmd_ca calls _call_command with 'ca'."""
+        with mock.patch.object(
+            sugar_swarm, '_get_list_args', return_value=['--rotate']
+        ):
+            with mock.patch.object(sugar_swarm, '_call_command') as mock_call:
+                sugar_swarm._cmd_ca(options='--rotate')
+                mock_call.assert_called_once_with('ca', options_args=['--rotate'])
+
     @pytest.mark.skip(
         reason='This test is experimental, need to add '
         'more test cases and more integrations to the  cli'
