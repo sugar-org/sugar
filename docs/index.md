@@ -23,6 +23,7 @@ file. So the command line would be very simple.
 
 - License: BSD 3 Clause
 - Documentation: https://osl-incubator.github.io/sugar
+- Maintained by: [SciStitch](https://scistitch.com) and project contributors
 
 ## How to Install
 
