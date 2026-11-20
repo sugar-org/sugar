@@ -135,3 +135,21 @@ Some examples of how to use it:
 **NOTE**: If you use: `default: group: {% raw %} ${{ env.ENV }} {% endraw %}`,
 you don't need to give `--group <GROUP_NAME>`, except if you want a different
 group than the default one.
+
+## Support & Acknowledgments
+
+### Help make container workflows easier to maintain
+
+Sugar reduces repetitive commands and configuration across container-based projects, so teams can focus on the applications they are building. Keeping that experience dependable takes ongoing care: tracking changes in container tooling, fixing compatibility issues, testing workflows, and helping new users get started. Your support helps us devote time to that work and keep Sugar openly available.
+
+**[Support Sugar development on Open Collective](https://opencollective.com/osl/projects/osl-sugar/donate?interval=month&amount=20&name=&legalName=&email=)**. A one-time donation helps today; recurring support helps us plan continued maintenance.
+
+### The people and organizations behind the work
+
+Sugar is developed and maintained through [SciStitch](https://scistitch.com/), alongside its open-source contributors. We are grateful to [Open Science Labs (OSL)](https://opensciencelabs.org/) for institutional support, and to the community of contributors and users who improve Sugar through code, documentation, testing, issue reports, and feedback. Thank you for helping the project grow.
+
+<p>
+  <a href="https://scistitch.com/"><img src="https://scistitch.com/images/logo/wordmark-color.svg" alt="SciStitch" width="160" style="background: #fff; border-radius: 6px; padding: 6px 8px;"></a>
+  &nbsp;&nbsp;
+  <a href="https://opensciencelabs.org/"><img src="https://scistitch.com/assets/osl-logo.svg" alt="Open Science Labs" width="128" style="background: #fff; border-radius: 6px; padding: 6px 8px;"></a>
+</p>
