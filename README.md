@@ -160,7 +160,7 @@ Sugar reduces repetitive commands and configuration across container-based proje
 Sugar is developed and maintained through [SciStitch](https://scistitch.com/), alongside its open-source contributors. We are grateful to [Open Science Labs (OSL)](https://opensciencelabs.org/) for institutional support, and to the community of contributors and users who improve Sugar through code, documentation, testing, issue reports, and feedback. Thank you for helping the project grow.
 
 <p>
-  <a href="https://scistitch.com/"><img src="https://scistitch.com/images/logo/wordmark-color.svg" alt="SciStitch" width="160"></a>
+  <a href="https://scistitch.com/"><img src="https://scistitch.com/images/logo/wordmark-color.svg" alt="SciStitch" width="160" style="background: #fff; border-radius: 6px; padding: 6px 8px;"></a>
   &nbsp;&nbsp;
-  <a href="https://opensciencelabs.org/"><img src="https://scistitch.com/assets/osl-logo.svg" alt="Open Science Labs" width="128"></a>
+  <a href="https://opensciencelabs.org/"><img src="https://scistitch.com/assets/osl-logo.svg" alt="Open Science Labs" width="128" style="background: #fff; border-radius: 6px; padding: 6px 8px;"></a>
 </p>
